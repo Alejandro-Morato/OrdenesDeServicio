@@ -5,7 +5,7 @@
 // URL del backend (cambiar según el entorno)
 const API_URL = window.location.hostname === 'localhost' 
   ? 'http://localhost:3000/api'
-  : 'https://tu-backend.vercel.app/api'; 
+  : 'https://ordenes-de-servicio-8wfa7hlkf.vercel.app/api'; 
 
 // Supabase 
 const SUPABASE_URL = 'https://ehoihmlbviviunsidisy.supabase.co';
