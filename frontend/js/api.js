@@ -10,43 +10,61 @@ class ApiClient {
   /**
    * Obtener el token de autenticación
    */
-  getToken() {
-    const token = sessionStorage.getItem('supabase_token'); // ✅ CON guion bajo
-    if (!token) {
+async getToken() {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.warn('Error obteniendo sesión:', error.message);
+      return null;
+    }
+
+    const token = data.session?.access_token || null;
+
+    if (token) {
+      sessionStorage.setItem('supabase_token', token);
+    } else {
       console.warn('No hay token de autenticación');
     }
+
     return token;
+  } catch (error) {
+    console.warn('No se pudo obtener el token:', error.message);
+    return sessionStorage.getItem('supabase_token');
   }
+}
 
-  /**
-   * Petición genérica
-   */
-  async request(endpoint, options = {}) {
-    const token = this.getToken();
 
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers
-      },
-      ...options
-    };
+/**
+ * Petición 
+ */
+async request(endpoint, options = {}) {
+  const token = await this.getToken();
 
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, config);
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers
+    },
+    ...options
+  };
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
-        throw new Error(error.error || `HTTP ${response.status}`);
-      }
+  try {
+    const response = await fetch(`${this.baseURL}${endpoint}`, config);
 
-      return await response.json();
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
+      throw new Error(error.error || `HTTP ${response.status}`);
     }
+
+    return await response.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
   }
+}
 
   // ── ÓRDENES ────────────────────────────────────────────────────────────
 

@@ -499,7 +499,7 @@ async function selectOrder(id) {
   try {
     const data = await api.getOrden(id); // GET /api/ordenes/:id
 
-    // Mapear snake_case → camelCase que usas en refacciones.html
+    // Mapear snake_case 
     const mapped = {
       id: data.id,
       numeroorden: data.folio,
@@ -808,7 +808,6 @@ async function addItem(type) {
 
   try {
     if (type === 'misc') {
-      // Lo manejamos en la sección de gastos
       return addMiscFromApi(o);
     }
 
@@ -823,7 +822,7 @@ async function addItem(type) {
       excluida_garantia: false
     });
 
-    // Mapear del backend al modelo que ya usas en refacciones.html
+    
     const newItem = {
       id: created.id,
       cantidad: created.cantidad || 1,
@@ -842,7 +841,7 @@ async function addItem(type) {
 
     computeOrder(o);
     renderEditor();
-    renderSidebar(); // para que se actualice el total en la lista
+    renderSidebar(); 
 
   } catch (err) {
     console.error('Error creando pieza:', err);
@@ -860,7 +859,6 @@ async function removePart(id) {
   if (!window.appConfirm('¿Eliminar esta pieza?')) return;
 
   try {
-    // Borrar primero en backend
     await api.deletePieza(id);
 
     // Actualizar modelo local
@@ -926,12 +924,11 @@ function updatePart(id, field, value) {
         payload.numero_serie = item.numeroserie;
       }
 
-      // Si por alguna razón no hay nada que mandar, no llames al API
       if (Object.keys(payload).length === 0) return;
 
       const updated = await api.updatePieza(id, payload);
 
-      // Actualizar campos calculados desde backend para estar sincronizados
+      
       item.subtotal = updated.subtotal || item.subtotal;
       item.iva = updated.iva || item.iva;
       item.total = updated.total || item.total;
@@ -1053,7 +1050,7 @@ async function toggleNoWarranty(id, checked) {
   if (td) td.innerHTML = totalsInnerHtml(o);
   renderSidebar();
 
-  // Enviar inmediatamente al backend (sin debounce, es solo un toggle)
+  
   try {
     await api.updatePieza(id, { excluida_garantia: checked });
   } catch (err) {
