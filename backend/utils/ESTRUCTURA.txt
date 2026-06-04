@@ -1,0 +1,31 @@
+backend/
+├── api/
+│   ├── index.js
+│   ├── ordenes.js
+│   ├── piezas.js
+│   ├── gastos.js
+│   └── reportes.js
+├── middleware/
+│   └── auth.js
+├── utils/
+│   ├── supabase.js
+│   └── cloudinary.js
+├── .env                  ← CREAR ESTE ARCHIVO
+├── .env.example          ← backend-env-example.txt
+├── package.json          ← backend-package.json
+├── vercel.json           ← backend-vercel.json
+└── README.md             ← backend-README.md
+
+Archivos generados (renombrar al copiar):
+  backend-env-example.txt        → backend/.env.example
+  backend-package.json           → backend/package.json
+  backend-vercel.json            → backend/vercel.json
+  backend-README.md              → backend/README.md
+  backend-utils-supabase.js      → backend/utils/supabase.js
+  backend-utils-cloudinary.js    → backend/utils/cloudinary.js
+  backend-middleware-auth.js     → backend/middleware/auth.js
+  backend-api-index.js           → backend/api/index.js
+  backend-api-ordenes.js         → backend/api/ordenes.js
+  backend-api-piezas.js          → backend/api/piezas.js
+  backend-api-gastos.js          → backend/api/gastos.js
+  backend-api-reportes.js        → backend/api/reportes.js

@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Taller — Órdenes de Servicio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange:#E8500A; --orange-hover:#C43F06; --orange-glow:rgba(232,80,10,0.15);
+    --green:#2E7D32; --green-light:#E8F5E9;
+    --blue:#1565C0; --blue-light:#E3F2FD;
+    --amber:#E65100; --amber-light:#FFF3E0;
+    --red:#C62828; --red-light:#FFEBEE;
+    --bg:#F4F5F7; --white:#FFFFFF;
+    --gray-900:#1C1C1C; --gray-700:#3D3D3D; --gray-500:#6B6B6B;
+    --gray-400:#8A8A8A; --gray-300:#B0B0B0; --gray-200:#D4D4D4;
+    --gray-100:#F0F0F0; --gray-50:#F8F8F8;
+    --font:'Inter',sans-serif;
+    --radius:12px; --radius-sm:8px; --radius-lg:16px;
+    --shadow:0 1px 4px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+    --shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{-webkit-font-smoothing:antialiased;}
+  body{font-family:var(--font);background:var(--bg);color:var(--gray-900);min-height:100vh;}
+
+  nav{background:var(--gray-900);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+  .nav-brand{display:flex;align-items:center;gap:12px;}
+  .nav-logo{font-size:15px;font-weight:900;color:#fff;letter-spacing:0.04em;}
+  .nav-logo span{color:var(--orange);}
+  .nav-sep{width:1px;height:20px;background:#3D3D3D;}
+  .nav-dept{font-size:0.8rem;font-weight:600;color:var(--gray-400);letter-spacing:0.06em;text-transform:uppercase;}
+  .nav-right{display:flex;align-items:center;gap:14px;}
+  .nav-user{font-size:0.82rem;color:var(--gray-300);}
+  .nav-user strong{color:#fff;}
+  .btn-logout{background:none;border:1px solid #3D3D3D;color:var(--gray-400);font-family:var(--font);font-size:0.78rem;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+  .btn-logout:hover{border-color:var(--gray-300);color:#fff;}
+
+  .tabs-bar{background:var(--white);border-bottom:1px solid var(--gray-200);display:flex;padding:0 24px;gap:4px;}
+  .tab-btn{padding:14px 18px;font-family:var(--font);font-size:0.875rem;font-weight:600;color:var(--gray-500);background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+  .tab-btn:hover{color:var(--gray-900);}
+  .tab-btn.active{color:var(--orange);border-bottom-color:var(--orange);}
+
+  .page{max-width:1200px;margin:0 auto;padding:28px 24px;}
+
+  .card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;}
+  .card-header{padding:20px 24px;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+  .card-header h2{font-size:1rem;font-weight:700;color:var(--gray-900);}
+  .card-header p{font-size:0.82rem;color:var(--gray-500);margin-top:2px;}
+  .card-body{padding:24px;}
+
+  .grid{display:grid;gap:16px;}
+  .g2{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  @media(max-width:700px){.g2,.g3{grid-template-columns:1fr;}}
+
+  .field{display:grid;gap:6px;}
+  .field label{font-size:0.78rem;font-weight:600;color:var(--gray-500);letter-spacing:0.03em;text-transform:uppercase;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:10px 13px;background:var(--gray-50);border:1.5px solid var(--gray-200);
+    border-radius:var(--radius-sm);font-family:var(--font);font-size:0.875rem;color:var(--gray-900);outline:none;
+    transition:border-color 0.15s,box-shadow 0.15s;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow);}
+  .field input[readonly],.field textarea[readonly]{background:var(--gray-100);color:var(--gray-500);cursor:default;}
+  .field textarea{resize:vertical;min-height:80px;}
+
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-sm);font-family:var(--font);font-size:0.855rem;font-weight:700;border:none;cursor:pointer;transition:all 0.15s;text-decoration:none;}
+  .btn-orange{background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(232,80,10,0.3);}
+  .btn-orange:hover{background:var(--orange-hover);transform:translateY(-1px);}
+  .btn-outline{background:var(--white);color:var(--gray-700);border:1.5px solid var(--gray-200);}
+  .btn-outline:hover{border-color:var(--gray-400);background:var(--gray-50);}
+  .btn-green{background:var(--green);color:#fff;}
+  .btn-green:hover{background:var(--green-light);color:var(--green);}
+  .btn-sm{padding:6px 12px;font-size:0.78rem;}
+  .btn:disabled{opacity:0.45;pointer-events:none;}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:0.72rem;font-weight:700;letter-spacing:0.03em;}
+  .b-open{background:#E8F5E9;color:#2E7D32;}
+  .b-progress{background:#FFF3E0;color:#E65100;}
+  .b-closed{background:#F3F4F6;color:#6B6B6B;}
+  .b-warranty{background:#FFF8E1;color:#F57F17;}
+
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:0.84rem;}
+  thead th{background:var(--gray-50);color:var(--gray-500);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;padding:10px 14px;text-align:left;border-bottom:1px solid var(--gray-200);}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--gray-100);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr.clickable{cursor:pointer;transition:background 0.12s;}
+  tbody tr.clickable:hover{background:var(--gray-50);}
+  .money{font-variant-numeric:tabular-nums;font-weight:600;color:var(--green);}
+
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:20px;}
+  .stat{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);}
+  .stat label{font-size:0.72rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;}
+  .stat strong{font-size:1.5rem;font-weight:800;color:var(--gray-900);}
+  .stat.orange strong{color:var(--orange);}
+  .stat.green strong{color:var(--green);}
+  .stat.blue strong{color:var(--blue);}
+
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;align-items:center;justify-content:center;padding:20px;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:100%;max-width:760px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
+  .modal-header{padding:20px 24px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+  .modal-header h3{font-size:1rem;font-weight:700;}
+  .modal-body{padding:24px;overflow-y:auto;display:grid;gap:16px;}
+  .modal-footer{padding:16px 24px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;}
+  .btn-close-modal{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray-400);line-height:1;padding:2px 6px;}
+  .btn-close-modal:hover{color:var(--gray-900);}
+
+  .warranty-box{background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:var(--radius);padding:18px;display:grid;gap:14px;}
+  .warranty-box .wt{font-size:0.82rem;font-weight:700;color:#92400E;display:flex;align-items:center;gap:7px;margin-bottom:4px;}
+
+  .totals-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:16px;display:grid;gap:8px;}
+  .total-line{display:flex;justify-content:space-between;font-size:0.855rem;color:var(--gray-700);}
+  .total-line:last-child{border-top:1px solid var(--gray-200);padding-top:8px;font-weight:700;font-size:1rem;color:var(--gray-900);}
+
+  hr.div{border:none;border-top:1px solid var(--gray-100);}
+  .empty{text-align:center;padding:32px;color:var(--gray-400);font-size:0.875rem;}
+  .section-label{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-400);margin-bottom:10px;}
+
+  .loading{text-align:center;padding:40px;color:var(--gray-400);}
+  .spinner{border:3px solid var(--gray-200);border-top:3px solid var(--orange);border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto;}
+  @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+
+  .warranty-gallery{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    gap:14px;
+  }
+  .wg-item{
+    display:block;
+    background:#fff;
+    border:1px solid var(--gray-200);
+    border-radius:12px;
+    overflow:hidden;
+    text-decoration:none;
+    color:var(--gray-900);
+    box-shadow:var(--shadow);
+  }
+  .wg-item img{
+    width:100%;
+    height:180px;
+    object-fit:cover;
+    display:block;
+    background:var(--gray-100);
+  }
+  .wg-item span{
+    display:block;
+    padding:10px 12px;
+    font-size:0.82rem;
+    font-weight:600;
+  }
+
+  .mobile-only{display:none;}
+
+  @media (max-width: 900px){
+    .page{padding:20px 16px;}
+    .card-header,.card-body,.modal-header,.modal-body,.modal-footer{padding-left:16px;padding-right:16px;}
+  }
+
+  @media (max-width: 700px){
+    nav{height:auto;min-height:56px;padding:10px 14px;gap:10px;flex-wrap:wrap;align-items:flex-start;}
+    .nav-brand,.nav-right{width:100%;justify-content:space-between;}
+    .nav-right{gap:10px;flex-wrap:wrap;align-items:center;}
+    .nav-user{font-size:0.78rem;line-height:1.35;}
+
+    .tabs-bar{
+      padding:0 10px;
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .tabs-bar::-webkit-scrollbar{display:none;}
+    .tab-btn{flex:0 0 auto;padding:14px 14px;font-size:0.82rem;}
+
+    .page{padding:14px 12px 24px;}
+    .card{border-radius:14px;}
+    .card-header{padding:16px;flex-direction:column;align-items:stretch;}
+    .card-header h2{font-size:0.96rem;}
+    .card-header p{font-size:0.8rem;line-height:1.45;}
+    .card-body{padding:16px;}
+
+    .toolbar{flex-direction:column;align-items:stretch;}
+    .toolbar .btn{width:100%;justify-content:center;min-height:44px;}
+
+    .field input,.field select,.field textarea{font-size:16px;min-height:44px;}
+    .field textarea{min-height:96px;}
+
+    #search-mias,#search-todas,#search-garantias{
+      width:100% !important;
+      min-height:44px;
+      font-size:16px;
+    }
+
+    .stats-row{grid-template-columns:1fr 1fr;gap:10px;}
+    .stat{padding:14px;}
+    .stat strong{font-size:1.2rem;}
+
+    .modal-bg{padding:0;align-items:flex-end;}
+    .modal{width:100%;max-width:none;height:100dvh;max-height:100dvh;border-radius:18px 18px 0 0;}
+    .modal-header{padding:14px 16px;}
+    .modal-header h3{font-size:0.95rem;line-height:1.35;padding-right:10px;}
+    .modal-body{padding:16px;gap:14px;}
+    .modal-footer{padding:14px 16px calc(14px + env(safe-area-inset-bottom));flex-direction:column-reverse;align-items:stretch;}
+    .modal-footer .btn,.modal-footer .badge{width:100%;justify-content:center;text-align:center;min-height:44px;}
+    .btn,.btn-sm,.btn-logout{min-height:44px;}
+
+    .modal .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+    #pane-mias .table-wrap,
+    #pane-todas .table-wrap,
+    #pane-garantias .table-wrap{
+      overflow:visible;
+    }
+
+    #pane-mias table, #pane-todas table, #pane-garantias table,
+    #pane-mias thead, #pane-todas thead, #pane-garantias thead,
+    #pane-mias tbody, #pane-todas tbody, #pane-garantias tbody,
+    #pane-mias tr, #pane-todas tr, #pane-garantias tr,
+    #pane-mias td, #pane-todas td, #pane-garantias td{
+      display:block;
+      width:100%;
+    }
+
+    #pane-mias thead,
+    #pane-todas thead,
+    #pane-garantias thead{
+      display:none;
+    }
+
+    #pane-mias tbody,
+    #pane-todas tbody,
+    #pane-garantias tbody{
+      display:grid;
+      gap:12px;
+      padding:12px;
+    }
+
+    #pane-mias tbody tr,
+    #pane-todas tbody tr,
+    #pane-garantias tbody tr{
+      background:var(--white);
+      border:1px solid var(--gray-200);
+      border-radius:14px;
+      box-shadow:var(--shadow);
+      padding:12px;
+    }
+
+    #pane-mias tbody td,
+    #pane-todas tbody td,
+    #pane-garantias tbody td{
+      border:none;
+      padding:6px 0;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      text-align:right;
+      white-space:normal !important;
+      max-width:none !important;
+      overflow:visible !important;
+    }
+
+    #pane-mias tbody td::before,
+    #pane-todas tbody td::before,
+    #pane-garantias tbody td::before{
+      content:attr(data-label);
+      font-size:0.72rem;
+      font-weight:700;
+      color:var(--gray-500);
+      text-transform:uppercase;
+      letter-spacing:0.05em;
+      text-align:left;
+      flex:0 0 42%;
+    }
+
+    #pane-mias tbody td > *,
+    #pane-todas tbody td > *,
+    #pane-garantias tbody td > *{
+      margin-left:auto;
+    }
+
+    #pane-mias tbody td:last-child,
+    #pane-todas tbody td:last-child,
+    #pane-garantias tbody td:last-child{
+      padding-top:10px;
+    }
+
+    #pane-mias tbody td:last-child .btn,
+    #pane-todas tbody td:last-child .btn,
+    #pane-garantias tbody td:last-child .btn{
+      width:100%;
+      justify-content:center;
+    }
+
+    .empty{padding:22px 12px;font-size:0.84rem;}
+  }
+
+  @media (max-width: 420px){
+    .stats-row{grid-template-columns:1fr;}
+    .nav-logo{font-size:14px;}
+    .nav-dept{font-size:0.74rem;}
+    .tab-btn{padding:13px 12px;font-size:0.8rem;}
+    .card-header,.card-body{padding:14px;}
+  }
+
+  @media print{
+    nav,.tabs-bar,.modal-bg,.btn,.toolbar{display:none!important;}
+    body{background:#fff;}
+    .card{box-shadow:none;border:none;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <span class="nav-logo">INTER<span> </span>RURAL</span>
+    <div class="nav-sep"></div>
+    <span class="nav-dept">Taller</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user">Sesión: <strong id="navUser">—</strong></span>
+    <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+  </div>
+</nav>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" id="tab-nueva" onclick="switchTab('nueva')">Nueva orden</button>
+  <button class="tab-btn" id="tab-mias" onclick="switchTab('mias')">Mis órdenes</button>
+  <button class="tab-btn" id="tab-todas" onclick="switchTab('todas')">Todas las órdenes</button>
+  <button class="tab-btn" id="tab-garantias" onclick="switchTab('garantias')">Garantías</button>
+</div>
+
+<div class="page">
+
+  <div id="pane-nueva">
+    <div class="card">
+      <div class="card-header">
+        <div><h2>Nueva Orden de Servicio</h2><p>Completa los datos del cliente y el equipo a reparar.</p></div>
+        <button class="btn btn-outline btn-sm" onclick="clearForm()">Limpiar formulario</button>
+      </div>
+      <div class="card-body grid">
+        <div class="grid g3">
+          <div class="field"><label>Cliente *</label><input id="f-client" placeholder="Nombre completo del cliente"/></div>
+          <div class="field"><label>Equipo / Artículo *</label><input id="f-item" placeholder="Ej. Dron T50, Generador..."/></div>
+          <div class="field"><label>Número de serie del equipo</label><input id="f-serial" placeholder="S/N (obligatorio en garantía)"/></div>
+          <div class="field"><label>Fecha de entrada *</label><input id="f-date" type="date"/></div>
+          <div class="field"><label>Técnico responsable *</label><input id="f-tech" placeholder="Nombre del técnico"/></div>
+          <div class="field">
+            <label for="f-warranty">¿Es garantía?</label>
+            <select id="f-warranty">
+              <option value="no" selected>No</option>
+              <option value="si">Sí</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field"><label>Falla reportada / Observaciones</label>
+          <textarea id="f-notes" placeholder="Describe la falla observada, condición del equipo, accesorios entregados..."></textarea>
+        </div>
+
+
+        <div class="toolbar">
+          <button class="btn btn-orange" onclick="createOrder()" id="createBtn">Crear orden de servicio</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pane-mias" style="display:none;">
+    <div class="stats-row" id="stats-mias"></div>
+    <div class="card">
+      <div class="card-header">
+        <div><h2>Mis órdenes</h2><p>Órdenes creadas por ti. Puedes ver el avance de refacciones y registrar la fecha de término.</p></div>
+        <input type="text" id="search-mias" placeholder="Buscar..." style="height:36px;padding:0 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:var(--font);font-size:0.85rem;outline:none;width:220px;"/>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Folio</th><th>Cliente</th><th>Equipo</th><th>Entrada</th>
+            <th>Estado</th><th>Total</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="tbody-mias"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="pane-todas" style="display:none;">
+    <div class="stats-row" id="stats-todas"></div>
+    <div class="card">
+      <div class="card-header">
+        <div><h2>Todas las órdenes</h2><p>Vista general de taller — solo lectura.</p></div>
+        <input type="text" id="search-todas" placeholder="Buscar..." style="height:36px;padding:0 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:var(--font);font-size:0.85rem;outline:none;width:220px;"/>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Folio</th><th>Técnico</th><th>Cliente</th><th>Equipo</th><th>Garantía</th>
+            <th>Entrada</th><th>Estado</th><th>Total</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="tbody-todas"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="pane-garantias" style="display:none;">
+    <div class="stats-row" id="stats-garantias"></div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Panel de Garantías</h2>
+          <p>Consulta general de órdenes en garantía con detalle del servicio e imágenes del caso.</p>
+        </div>
+        <input type="text" id="search-garantias" placeholder="Buscar por folio, cliente, equipo o técnico..." style="height:36px;padding:0 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:var(--font);font-size:0.85rem;outline:none;width:280px;"/>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Folio</th><th>Técnico</th><th>Cliente</th><th>Equipo</th><th>Entrada</th><th>Estado</th><th>Garantía</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="tbody-garantias"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Orden de Servicio</h3>
+      <button class="btn-close-modal" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+
+<script>
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentSession = null;
+let allOrders = [];
+let warrantyOrders = [];
+let activeOrderId = null;
+
+(async function() {
+  const session = await checkSession();
+  if (!session || session.rol !== 'taller') {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  currentSession = session;
+  document.getElementById('navUser').textContent = session.nombre || session.user.email;
+
+  const techInput = document.getElementById('f-tech');
+  techInput.value = session.nombre || session.user.email || '';
+  techInput.readOnly = true;
+})();
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function getCountValue(v) {
+  if (Array.isArray(v) && v.length && typeof v[0]?.count !== 'undefined') return Number(v[0].count) || 0;
+  if (typeof v?.count !== 'undefined') return Number(v.count) || 0;
+  if (typeof v === 'number') return v;
+  return 0;
+}
+
+function mapOrderFromBackend(order) {
+  return {
+    id: order.id,
+    folio: order.folio,
+
+    client_name: order.client_name ?? order.cliente_nombre ?? '',
+    repair_item: order.repair_item ?? order.equipo_descripcion ?? '',
+    equipment_serial: order.equipment_serial ?? order.equipo_serial ?? '',
+    entry_date: order.entry_date ?? order.fecha_entrada ?? '',
+    completion_date: order.completion_date ?? order.fecha_termino ?? '',
+
+    technician_id: order.technician_id ?? order.tecnico_id ?? null,
+    technician_name: order.technician_name ?? order.tecnico_nombre ?? '',
+
+    failure_notes: order.failure_notes ?? order.falla_reportada ?? '',
+
+    is_warranty: Boolean(order.is_warranty ?? order.es_garantia),
+    closed_by_workshop: Boolean(order.closed_by_workshop ?? order.cerrada_taller),
+    closed_by_parts: Boolean(order.closed_by_parts ?? order.cerrada_refacciones),
+    parts_closed_at: order.parts_closed_at ?? order.fecha_cierre_refacciones ?? null,  // ← AGREGAR
+    
+    created_by: order.created_by ?? order.creado_por ?? null,
+    created_at: order.created_at ?? order.created_at ?? '',
+
+    labor_hours: parseFloat(order.labor_hours ?? order.horas_trabajo ?? 0),
+    labor_rate: parseFloat(order.labor_rate ?? order.tarifa_hora ?? 0),
+    labor_cost: parseFloat(order.labor_cost ?? order.total_mano_obra ?? 0),
+    total: parseFloat(order.total ?? order.total_orden ?? 0),
+
+    piezas: Array.isArray(order.piezas) ? order.piezas.map(p => ({
+      id: p.id,
+      quantity: parseFloat(p.quantity ?? p.cantidad ?? 1),
+      code: p.code ?? p.codigo ?? '',
+      description: p.description ?? p.descripcion ?? '',
+      serial: p.serial ?? p.numero_serie ?? '',
+      unit_price: parseFloat(p.unit_price ?? p.precio_unitario_con_iva ?? 0),
+      subtotal: parseFloat(p.subtotal ?? 0),
+      iva: parseFloat(p.iva ?? 0),
+      total: parseFloat(p.total ?? 0),
+      excluded_warranty: Boolean(p.excluded_warranty ?? p.excluida_garantia)
+    })) : [],
+
+    gastos: Array.isArray(order.gastos) ? order.gastos.map(g => ({
+      id: g.id,
+      quantity: parseFloat(g.quantity ?? g.cantidad ?? 1),
+      code: g.code ?? g.codigo ?? '',
+      description: g.description ?? g.descripcion ?? '',
+      reference: g.reference ?? g.referencia ?? '',
+      unit_price: parseFloat(g.unit_price ?? g.precio_unitario_con_iva ?? 0),
+      subtotal: parseFloat(g.subtotal ?? 0),
+      iva: parseFloat(g.iva ?? 0),
+      total: parseFloat(g.total ?? 0)
+    })) : Array.isArray(order.gastos_diversos) ? order.gastos_diversos.map(g => ({
+      id: g.id,
+      quantity: parseFloat(g.quantity ?? g.cantidad ?? 1),
+      code: g.code ?? g.codigo ?? '',
+      description: g.description ?? g.descripcion ?? '',
+      reference: g.reference ?? g.referencia ?? '',
+      unit_price: parseFloat(g.unit_price ?? g.precio_unitario_con_iva ?? 0),
+      subtotal: parseFloat(g.subtotal ?? 0),
+      iva: parseFloat(g.iva ?? 0),
+      total: parseFloat(g.total ?? 0)
+    })) : [],
+
+    warranty_images: Array.isArray(order.warranty_images)
+      ? order.warranty_images
+      : Array.isArray(order.imagenes_garantia)
+        ? order.imagenes_garantia
+        : []
+  };
+}
+
+function statusBadge(o) {
+  if (o.closed_by_workshop && o.closed_by_parts) return '<span class="badge b-closed">Cerrada</span>';
+  if (o.closed_by_workshop || o.closed_by_parts) return '<span class="badge b-progress">En proceso</span>';
+  return '<span class="badge b-open">Abierta</span>';
+}
+
+
+function switchTab(t) {
+  ['nueva','mias','todas','garantias'].forEach(id => {
+    document.getElementById('pane-'+id).style.display = id===t ? '' : 'none';
+    document.getElementById('tab-'+id).classList.toggle('active', id===t);
+  });
+
+  if (t === 'mias') loadMias();
+  if (t === 'todas') loadTodas();
+  if (t === 'garantias') loadGarantias();
+}
+
+document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+
+document.getElementById('f-warranty').addEventListener('change', e => {
+  document.getElementById('warranty-section').style.display = e.target.value === 'si' ? '' : 'none';
+});
+
+function clearForm() {
+  ['f-client','f-item','f-serial','f-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f-warranty').value = 'no';
+
+  if (currentSession) {
+    const techInput = document.getElementById('f-tech');
+    techInput.value = currentSession.nombre || currentSession.user.email || '';
+    techInput.readOnly = true;
+  }
+}
+
+async function createOrder() {
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creando...';
+
+  try {
+    const cliente = document.getElementById('f-client').value.trim();
+    const equipo  = document.getElementById('f-item').value.trim();
+    const fecha   = document.getElementById('f-date').value;
+    const tecnico = document.getElementById('f-tech').value.trim();
+    const serie   = document.getElementById('f-serial').value.trim();
+    const falla   = document.getElementById('f-notes').value.trim();
+    const esGarantia = document.getElementById('f-warranty').value === 'si';
+
+    if (!cliente || !equipo || !fecha) {
+      alert('Completa los campos obligatorios marcados con *.');
+      return;
+    }
+
+    if (esGarantia && !serie) {
+      alert('En garantía es obligatorio ingresar el número de serie del equipo.');
+      return;
+    }
+
+    const orden = {
+      cliente_nombre: cliente,
+      equipo_modelo:  equipo,
+      fecha_entrada:  fecha,
+      tecnico_nombre: tecnico,
+      equipo_serie:   serie || null,
+      falla_reportada: falla || null,
+      es_garantia:    esGarantia
+    };
+
+    const data = await api.createOrden(orden);
+
+    clearForm();
+    alert(`✓ Orden N° ${data.folio} creada correctamente`);
+    switchTab('mias');
+  } catch (error) {
+    console.error('Error creando orden:', error);
+    alert('Error al crear la orden: ' + error.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Crear orden de servicio';
+  }
+}
+
+async function loadMias() {
+  try {
+    document.getElementById('tbody-mias').innerHTML = '<tr><td colspan="8"><div class="loading"><div class="spinner"></div>Cargando...</div></td></tr>';
+
+    const result = await api.getOrdenes();
+    allOrders = (Array.isArray(result) ? result : []).map(mapOrderFromBackend);
+
+    const user = getCurrentUser();
+    const myOrders = allOrders.filter(o => o.created_by === user.id || o.technician_id === user.id);
+
+    renderMias(myOrders);
+  } catch (error) {
+    document.getElementById('tbody-mias').innerHTML = '<tr><td colspan="8"><div class="empty">Error al cargar órdenes: ' + escapeHtml(error.message) + '</div></td></tr>';
+  }
+}
+
+function renderMias(orders) {
+  const q = document.getElementById('search-mias').value.toLowerCase();
+  const filtered = q ? orders.filter(o =>
+    (o.client_name || '').toLowerCase().includes(q) ||
+    String(o.folio).includes(q) ||
+    (o.repair_item || '').toLowerCase().includes(q)
+  ) : orders;
+
+  document.getElementById('stats-mias').innerHTML = [
+    { label:'Total', val:orders.length, cls:'' },
+    { label:'Abiertas', val:orders.filter(o => !o.closed_by_workshop && !o.closed_by_parts).length, cls:'green' },
+    { label:'En proceso', val:orders.filter(o => (o.closed_by_workshop || o.closed_by_parts) && !(o.closed_by_workshop && o.closed_by_parts)).length, cls:'orange' },
+    { label:'Cerradas', val:orders.filter(o => o.closed_by_workshop && o.closed_by_parts).length, cls:'blue' },
+    
+  ].map(s => `<div class="stat ${s.cls}"><label>${s.label}</label><strong>${s.val}</strong></div>`).join('');
+
+  document.getElementById('tbody-mias').innerHTML = filtered.length ? filtered.map(o => `
+    <tr class="clickable" onclick="openModal('${o.id}', true)">
+      <td data-label="Folio"><strong>${o.folio}</strong></td>
+      <td data-label="Cliente">${escapeHtml(o.client_name)} ${o.is_warranty ? '<span class="badge b-warranty">G</span>' : ''}</td>
+      <td data-label="Equipo">${escapeHtml(o.repair_item)}</td>
+      <td data-label="Entrada">${formatDate(o.entry_date)}</td>
+      <td data-label="Estado">${statusBadge(o)}</td>
+      <td data-label="Total" class="money">${money(o.total)}</td>
+      <td data-label="Acciones"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openModal('${o.id}',true)">Ver</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="8"><div class="empty">No tienes órdenes registradas aún.</div></td></tr>`;
+}
+
+async function loadTodas() {
+  try {
+    document.getElementById('tbody-todas').innerHTML = '<tr><td colspan="9"><div class="loading"><div class="spinner"></div>Cargando...</div></td></tr>';
+
+    const result = await api.getOrdenes();
+    allOrders = (Array.isArray(result) ? result : []).map(mapOrderFromBackend);
+
+    renderTodas(allOrders);
+  } catch (error) {
+    document.getElementById('tbody-todas').innerHTML = '<tr><td colspan="9"><div class="empty">Error al cargar órdenes: ' + escapeHtml(error.message) + '</div></td></tr>';
+  }
+}
+
+function renderTodas(orders) {
+  const q = document.getElementById('search-todas').value.toLowerCase();
+  const filtered = q ? orders.filter(o =>
+    (o.client_name || '').toLowerCase().includes(q) ||
+    String(o.folio).includes(q) ||
+    (o.technician_name || '').toLowerCase().includes(q)
+  ) : orders;
+
+  document.getElementById('stats-todas').innerHTML = [
+    { label:'Total', val:orders.length, cls:'' },
+    { label:'Abiertas', val:orders.filter(o => !o.closed_by_workshop && !o.closed_by_parts).length, cls:'green' },
+    { label:'En proceso', val:orders.filter(o => (o.closed_by_workshop || o.closed_by_parts) && !(o.closed_by_workshop && o.closed_by_parts)).length, cls:'orange' },
+    { label:'Cerradas', val:orders.filter(o => o.closed_by_workshop && o.closed_by_parts).length, cls:'blue' },
+    
+  ].map(s => `<div class="stat ${s.cls}"><label>${s.label}</label><strong>${s.val}</strong></div>`).join('');
+
+  document.getElementById('tbody-todas').innerHTML = filtered.length ? filtered.map(o => `
+    <tr class="clickable" onclick="openModal('${o.id}', false)">
+      <td data-label="Folio"><strong>${o.folio}</strong></td>
+      <td data-label="Técnico">${escapeHtml(o.technician_name || '—')}</td>
+      <td data-label="Cliente">${escapeHtml(o.client_name)}</td>
+      <td data-label="Equipo">${escapeHtml(o.repair_item)}</td>
+      <td data-label="Garantía">${o.is_warranty ? '<span class="badge b-warranty">Sí</span>' : 'No'}</td>
+      <td data-label="Entrada">${formatDate(o.entry_date)}</td>
+      <td data-label="Estado">${statusBadge(o)}</td>
+      <td data-label="Total" class="money">${money(o.total)}</td>
+      <td data-label="Acciones"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openModal('${o.id}',false)">Ver</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="9"><div class="empty">No hay órdenes registradas aún.</div></td></tr>`;
+}
+
+async function loadGarantias() {
+  try {
+    document.getElementById('tbody-garantias').innerHTML =
+      `<tr><td colspan="8"><div class="loading"><div class="spinner"></div>Cargando...</div></td></tr>`;
+
+    const result = await api.getOrdenes('garantias');
+
+    warrantyOrders = (Array.isArray(result) ? result : [])
+      .map(mapOrderFromBackend)
+      .filter(o => o.is_warranty);
+
+    renderGarantias(warrantyOrders);
+  } catch (error) {
+    document.getElementById('tbody-garantias').innerHTML =
+      `<tr><td colspan="8"><div class="empty">Error al cargar garantías: ${escapeHtml(error.message)}</div></td></tr>`;
+  }
+}
+
+function renderGarantias(orders) {
+  const q = document.getElementById('search-garantias').value.toLowerCase();
+  const filtered = q ? orders.filter(o =>
+    String(o.folio).includes(q) ||
+    (o.client_name || '').toLowerCase().includes(q) ||
+    (o.repair_item || '').toLowerCase().includes(q) ||
+    (o.technician_name || '').toLowerCase().includes(q)
+  ) : orders;
+
+  document.getElementById('stats-garantias').innerHTML = [
+    { label:'Casos', val:orders.length, cls:'' },
+    { label:'Abiertas', val:orders.filter(o => !o.closed_by_workshop && !o.closed_by_parts).length, cls:'green' },
+    { label:'En proceso', val:orders.filter(o => (o.closed_by_workshop || o.closed_by_parts) && !(o.closed_by_workshop && o.closed_by_parts)).length, cls:'orange' },
+    { label:'Cerradas', val:orders.filter(o => o.closed_by_workshop && o.closed_by_parts).length, cls:'blue' },
+    { label:'Monto total', val:money(orders.reduce((s,o) => s + (o.total || 0), 0)), cls:'' }
+  ].map(s => `<div class="stat ${s.cls}"><label>${s.label}</label><strong>${s.val}</strong></div>`).join('');
+
+  document.getElementById('tbody-garantias').innerHTML = filtered.length ? filtered.map(o => `
+    <tr class="clickable" onclick="openWarrantyModal('${o.id}')">
+      <td data-label="Folio"><strong>${o.folio}</strong></td>
+      <td data-label="Técnico">${escapeHtml(o.technician_name || '—')}</td>
+      <td data-label="Cliente">${escapeHtml(o.client_name)}</td>
+      <td data-label="Equipo">${escapeHtml(o.repair_item)}</td>
+      <td data-label="Entrada">${formatDate(o.entry_date)}</td>
+      <td data-label="Estado">${statusBadge(o)}</td>
+      <td data-label="Garantía">
+  ${o.is_warranty
+    ? '<span class="badge b-warranty">Sí</span>'
+    : 'No'}
+</td>
+      <td data-label="Acciones"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openWarrantyModal('${o.id}')">Ver caso</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="8"><div class="empty">No hay órdenes de garantía registradas.</div></td></tr>`;
+}
+
+async function openModal(id, canClose) {
+  activeOrderId = id;
+
+  try {
+    const raw = await api.getOrden(id);
+    const orden = mapOrderFromBackend(raw);
+
+    document.getElementById('modal-title').textContent = `Orden N° ${orden.folio} — ${orden.client_name}`;
+    renderModalBody(orden, canClose);
+
+    const already = orden.closed_by_workshop;
+    document.getElementById('modal-footer').innerHTML = `
+      <button class="btn btn-outline" onclick="closeModal()">Cerrar</button>
+      ${canClose && !already ? `<button class="btn btn-green" onclick="workshopClose(event)">✓ Registrar término y cerrar mi parte</button>` : ''}
+      ${already ? `<span class="badge b-closed" style="padding:8px 14px;">✓ Ya registraste el cierre</span>` : ''}
+    `;
+
+    document.getElementById('modal').classList.add('open');
+  } catch (error) {
+    alert('Error al cargar orden: ' + error.message);
+  }
+}
+
+function renderModalBody(o, canClose) {
+  const parts = o.piezas || [];
+  const misc = o.gastos || [];
+
+  const partsHtml = parts.length || misc.length ? `
+    <div class="table-wrap"><table>
+      <thead><tr><th>Cant.</th><th>Código</th><th>Descripción</th><th>No. Serie</th><th>P. Unit.</th><th>IVA</th><th>Total</th></tr></thead>
+      <tbody>
+        ${parts.map(i => `<tr><td>${i.quantity}</td><td>${escapeHtml(i.code || '—')}</td><td>${escapeHtml(i.description || '—')}</td><td>${escapeHtml(i.serial || '—')}</td><td class="money">${money(i.unit_price)}</td><td class="money">${money(i.iva)}</td><td class="money">${money(i.total)}</td></tr>`).join('')}
+        ${misc.map(i => `<tr style="color:var(--amber)"><td>${i.quantity}</td><td>${escapeHtml(i.code || '—')}</td><td>${escapeHtml(i.description || '—')} <em>(gasto)</em></td><td>—</td><td class="money">${money(i.unit_price)}</td><td class="money">${money(i.iva)}</td><td class="money">${money(i.total)}</td></tr>`).join('')}
+      </tbody>
+    </table></div>` : `<div class="empty" style="padding:16px;">Refacciones aún no ha capturado conceptos.</div>`;
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="grid g3">
+      <div class="field"><label>Cliente</label><input value="${escapeHtml(o.client_name)}" readonly/></div>
+      <div class="field"><label>Equipo</label><input value="${escapeHtml(o.repair_item)}" readonly/></div>
+      <div class="field"><label>Técnico</label><input value="${escapeHtml(o.technician_name || '—')}" readonly/></div>
+      <div class="field"><label>Fecha de entrada</label><input value="${formatDate(o.entry_date)}" readonly/></div>
+      <div class="field"><label>No. serie</label><input value="${escapeHtml(o.equipment_serial || '—')}" readonly/></div>
+      <div class="field"><label>Estado</label><input value="${o.closed_by_workshop && o.closed_by_parts ? 'Cerrada' : (o.closed_by_workshop || o.closed_by_parts ? 'En proceso' : 'Abierta')}" readonly/></div>
+      ${o.closed_by_parts && o.parts_closed_at ? `
+      <div class="field" style="grid-column:1/-1">
+        <label>✓ Cerrado por Refacciones</label>
+        <input value="${o.parts_closed_at ? new Date(o.parts_closed_at).toLocaleString('es-MX') : '—'}" readonly style="background:#E8F5E9;color:#2E7D32;font-weight:600;border-color:#A5D6A7;"/>
+      </div>` : ''}
+    </div>
+    <div class="field"><label>Falla reportada</label><textarea readonly>${escapeHtml(o.failure_notes || '')}</textarea></div>
+    <hr class="div"/>
+    <div>
+      <p class="section-label">Conceptos de Refacciones (solo lectura)</p>
+      ${partsHtml}
+    </div>
+    <div class="totals-box">
+      <div class="total-line"><span>Subtotal piezas</span><strong>${money(o.subtotal_parts)}</strong></div>
+      <div class="total-line"><span>Gastos diversos</span><strong>${money(o.subtotal_misc)}</strong></div>
+      <div class="total-line"><span>Mano de obra (${o.labor_hours || 0}h × ${money(o.labor_rate || 0)}/h)</span><strong>${money(o.labor_cost || 0)}</strong></div>
+      <div class="total-line"><span>TOTAL</span><strong class="money">${money(o.total)}</strong></div>
+    </div>
+    <div class="field">
+      <label>Fecha de término de reparación ${o.closed_by_workshop ? '(registrada)' : ''}</label>
+      <input type="date" id="completion-date" value="${o.completion_date || ''}" ${o.closed_by_workshop || !canClose ? 'readonly' : ''}/>
+    </div>
+  `;
+}
+
+async function openWarrantyModal(id) {
+  activeOrderId = id;
+
+  try {
+    const raw = await api.getOrden(id);
+    const orden = mapOrderFromBackend(raw);
+    const images = Array.isArray(orden.warranty_images) ? orden.warranty_images : [];
+
+    document.getElementById('modal-title').textContent = `Garantía · Orden N° ${orden.folio}`;
+
+    const parts = orden.piezas || [];
+    const misc = orden.gastos || [];
+
+    const partsHtml = parts.length || misc.length ? `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cant.</th><th>Código</th><th>Descripción</th><th>No. Serie</th><th>P. Unit.</th><th>IVA</th><th>Total</th></tr></thead>
+        <tbody>
+          ${parts.map(i => `<tr><td>${i.quantity}</td><td>${escapeHtml(i.code || '—')}</td><td>${escapeHtml(i.description || '—')}</td><td>${escapeHtml(i.serial || '—')}</td><td class="money">${money(i.unit_price)}</td><td class="money">${money(i.iva)}</td><td class="money">${money(i.total)}</td></tr>`).join('')}
+          ${misc.map(i => `<tr style="color:var(--amber)"><td>${i.quantity}</td><td>${escapeHtml(i.code || '—')}</td><td>${escapeHtml(i.description || '—')} <em>(gasto)</em></td><td>—</td><td class="money">${money(i.unit_price)}</td><td class="money">${money(i.iva)}</td><td class="money">${money(i.total)}</td></tr>`).join('')}
+        </tbody>
+      </table></div>` : `<div class="empty" style="padding:16px;">No hay conceptos capturados en esta orden.</div>`;
+
+    document.getElementById('modal-body').innerHTML = `
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-body">
+          <div class="grid g3">
+            <div><strong>Cliente:</strong><br>${escapeHtml(orden.client_name || '—')}</div>
+            <div><strong>Técnico:</strong><br>${escapeHtml(orden.technician_name || '—')}</div>
+            <div><strong>Fecha entrada:</strong><br>${formatDate(orden.entry_date)}</div>
+            <div><strong>Equipo:</strong><br>${escapeHtml(orden.repair_item || '—')}</div>
+            <div><strong>No. serie:</strong><br>${escapeHtml(orden.equipment_serial || '—')}</div>
+            <div><strong>Estado:</strong><br>${orden.closed_by_workshop && orden.closed_by_parts ? 'Cerrada' : (orden.closed_by_workshop || orden.closed_by_parts ? 'En proceso' : 'Abierta')}</div>
+          </div>
+          <div class="field" style="margin-top:14px;">
+            <label>Falla reportada</label>
+            <textarea readonly>${escapeHtml(orden.failure_notes || '')}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Conceptos de la orden</p>
+        ${partsHtml}
+      </div>
+
+      <div class="totals-box">
+        <div class="total-line"><span>Subtotal piezas</span><strong>${money(orden.subtotal_parts)}</strong></div>
+        <div class="total-line"><span>Gastos diversos</span><strong>${money(orden.subtotal_misc)}</strong></div>
+        <div class="total-line"><span>Mano de obra</span><strong>${money(orden.labor_cost || 0)}</strong></div>
+        <div class="total-line"><span>TOTAL</span><strong class="money">${money(orden.total)}</strong></div>
+      </div>
+
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <div>
+            <h2>Evidencia fotográfica</h2>
+            <p>Imágenes registradas para este caso de garantía.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          ${
+            images.length
+              ? `<div class="warranty-gallery">
+                  ${images.map(img => `
+                    <a href="${img.url}" target="_blank" rel="noopener noreferrer" class="wg-item">
+                      <img src="${img.url}" alt="Evidencia de garantía ${escapeHtml(img.tipo || 'imagen')}">
+                      <span>${escapeHtml(img.tipo || 'imagen')}</span>
+                    </a>
+                  `).join('')}
+                </div>`
+              : `<div class="empty" style="padding:16px;">Esta orden no tiene imágenes registradas.</div>`
+          }
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-footer').innerHTML = `
+      <button class="btn btn-outline" onclick="closeModal()">Cerrar</button>
+    `;
+
+    document.getElementById('modal').classList.add('open');
+  } catch (error) {
+    alert('Error al cargar caso de garantía: ' + error.message);
+  }
+}
+
+
+
+async function workshopClose(ev) {
+  const btn = ev.target;
+  btn.disabled = true;
+  btn.textContent = 'Cerrando...';
+
+  try {
+    const d = document.getElementById('completion-date').value;
+    if (!d) {
+      alert('Ingresa la fecha de término de la reparación.');
+      btn.disabled = false;
+      btn.textContent = '✓ Registrar término y cerrar mi parte';
+      return;
+    }
+
+    await api.updateOrden(activeOrderId, {
+      fecha_termino: d,
+      cerrada_taller: true
+    });
+
+    closeModal();
+    loadMias();
+    alert('✓ Tu parte de la orden ha sido cerrada. Refacciones ya puede finalizar su cierre.');
+  } catch (error) {
+    alert('Error al cerrar: ' + error.message);
+    btn.disabled = false;
+    btn.textContent = '✓ Registrar término y cerrar mi parte';
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  activeOrderId = null;
+}
+
+document.getElementById('search-mias').addEventListener('input', () => {
+  const user = getCurrentUser();
+  const myOrders = allOrders.filter(o => o.created_by === user.id || o.technician_id === user.id);
+  renderMias(myOrders);
+});
+
+document.getElementById('search-todas').addEventListener('input', () => {
+  renderTodas(allOrders);
+});
+
+document.getElementById('search-garantias').addEventListener('input', () => {
+  renderGarantias(warrantyOrders);
+});
+
+loadMias();
+</script>
+</body>
+</html>

@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Gerencia — Reportes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --orange:#E8500A;--orange-hover:#C43F06;--orange-glow:rgba(232,80,10,0.15);
+    --green:#2E7D32;--blue:#1565C0;--amber:#E65100;--red:#C62828;
+    --bg:#F4F5F7;--white:#FFFFFF;
+    --gray-900:#1C1C1C;--gray-700:#3D3D3D;--gray-500:#6B6B6B;
+    --gray-400:#8A8A8A;--gray-300:#B0B0B0;--gray-200:#D4D4D4;
+    --gray-100:#F0F0F0;--gray-50:#F8F8F8;
+    --font:'Inter',sans-serif;
+    --radius:12px;--radius-sm:8px;--radius-lg:16px;
+    --shadow:0 1px 4px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+    --shadow-lg:0 8px 32px rgba(0,0,0,0.14);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{-webkit-font-smoothing:antialiased;}
+  body{font-family:var(--font);background:var(--bg);color:var(--gray-900);min-height:100vh;}
+
+  /* NAV */
+  nav{
+    background:var(--gray-900);height:56px;display:flex;align-items:center;
+    justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;
+    box-shadow:0 2px 8px rgba(0,0,0,0.3);
+  }
+  .nav-brand{display:flex;align-items:center;gap:12px;}
+  .nav-logo{font-size:15px;font-weight:900;color:#fff;letter-spacing:0.04em;}
+  .nav-logo span{color:var(--orange);}
+  .nav-sep{width:1px;height:20px;background:#3D3D3D;}
+  .nav-dept{font-size:0.8rem;font-weight:600;color:var(--gray-400);letter-spacing:0.06em;text-transform:uppercase;}
+  .nav-right{display:flex;align-items:center;gap:14px;}
+  .nav-user{font-size:0.82rem;color:var(--gray-300);}
+  .nav-user strong{color:#fff;}
+  .btn-logout{
+    background:none;border:1px solid #3D3D3D;color:var(--gray-400);
+    font-family:var(--font);font-size:0.78rem;padding:5px 12px;
+    border-radius:6px;cursor:pointer;transition:all 0.15s;
+  }
+  .btn-logout:hover{border-color:var(--gray-300);color:#fff;}
+
+  /* MAIN */
+  .main{padding:24px;max-width:1400px;margin:0 auto;}
+
+  /* CARD */
+  .card{
+    background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);
+    box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;
+  }
+  .card-header{
+    padding:18px 22px;border-bottom:1px solid var(--gray-100);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  .card-header h2{font-size:1.1rem;font-weight:800;}
+  .card-header p{font-size:0.8rem;color:var(--gray-500);margin-top:2px;}
+  .card-body{padding:20px 22px;}
+
+  /* FILTERS */
+  .filters{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:14px;margin-bottom:20px;
+  }
+  .field{display:grid;gap:5px;}
+  .field label{
+    font-size:0.72rem;font-weight:700;color:var(--gray-500);
+    letter-spacing:0.04em;text-transform:uppercase;
+  }
+  .field select,.field input{
+    width:100%;padding:9px 12px;background:var(--gray-50);border:1.5px solid var(--gray-200);
+    border-radius:var(--radius-sm);font-family:var(--font);font-size:0.855rem;
+    color:var(--gray-900);outline:none;
+    transition:border-color 0.15s,box-shadow 0.15s;
+  }
+  .field select:focus,.field input:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow);}
+
+  /* STATS */
+  .stats{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:16px;margin-bottom:24px;
+  }
+  .stat-card{
+    background:linear-gradient(135deg,#f8f9fa 0%,#fff 100%);
+    border:1px solid var(--gray-200);border-radius:var(--radius);
+    padding:16px;position:relative;overflow:hidden;
+  }
+  .stat-card::before{
+    content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--orange);
+  }
+  .stat-label{
+    font-size:0.72rem;font-weight:700;color:var(--gray-500);
+    text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;
+  }
+  .stat-value{
+    font-size:1.8rem;font-weight:900;color:var(--gray-900);font-variant-numeric:tabular-nums;
+  }
+  .stat-sub{font-size:0.78rem;color:var(--gray-400);margin-top:4px;}
+
+  /* TABLE */
+  .table-wrap{overflow-x:auto;margin-bottom:20px;}
+  table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+  thead th{
+    background:var(--gray-900);color:#fff;padding:10px 12px;text-align:left;
+    font-size:0.75rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;
+  }
+  thead th:last-child{text-align:right;}
+  tbody td{
+    padding:10px 12px;border-bottom:1px solid var(--gray-100);vertical-align:middle;
+  }
+  tbody td:last-child{text-align:right;font-variant-numeric:tabular-nums;}
+  tbody tr:hover{background:var(--gray-50);}
+  tbody tr:last-child td{border-bottom:none;}
+  .row-total{background:#FFF8E1;font-weight:700;}
+  .row-total td{border-top:2px solid var(--orange);border-bottom:2px solid var(--orange);}
+
+  /* CHART */
+  .chart-container{
+    background:var(--gray-50);border:1px solid var(--gray-200);
+    border-radius:var(--radius);padding:20px;margin-bottom:20px;min-height:300px;
+  }
+  .chart-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .chart-label{min-width:120px;font-size:0.82rem;font-weight:700;color:var(--gray-700);}
+  .chart-bar-bg{
+    flex:1;background:var(--gray-200);border-radius:99px;height:32px;position:relative;overflow:hidden;
+  }
+  .chart-bar-fill{
+    background:linear-gradient(90deg,var(--orange),#FF8A50);height:100%;border-radius:99px;
+    display:flex;align-items:center;justify-content:flex-end;padding:0 12px;transition:width 0.4s ease;
+  }
+  .chart-bar-value{font-size:0.78rem;font-weight:900;color:#fff;white-space:nowrap;}
+
+  /* BUTTONS */
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
+    border-radius:var(--radius-sm);font-family:var(--font);font-size:0.83rem;
+    font-weight:700;border:none;cursor:pointer;transition:all 0.15s;
+  }
+  .btn-orange{background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(232,80,10,0.28);}
+  .btn-orange:hover{background:var(--orange-hover);transform:translateY(-1px);}
+  .btn-outline{background:var(--white);color:var(--gray-700);border:1.5px solid var(--gray-200);}
+  .btn-outline:hover{border-color:var(--gray-400);background:var(--gray-50);}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;}
+
+  /* BADGE GENERAL STATS */
+  .tag-kpi{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:0.75rem;color:var(--gray-500);
+  }
+  .tag-dot{
+    width:8px;height:8px;border-radius:999px;background:var(--orange);
+  }
+
+  /* DETALLE COMPACTO */
+  .compact-tech-block{
+    border:1px solid var(--gray-200);
+    border-radius:10px;
+    margin-bottom:12px;
+    overflow:hidden;
+    background:#fff;
+    page-break-inside:avoid;
+    break-inside:avoid;
+  }
+  .compact-tech-title{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:8px 12px;
+    background:var(--gray-900);
+    color:#fff;
+    font-size:0.8rem;
+    font-weight:800;
+  }
+  .compact-lines{
+    padding:6px 10px;
+  }
+  .compact-line{
+    display:grid;
+    grid-template-columns:70px 1fr 42px 74px 68px;
+    gap:8px;
+    align-items:center;
+    padding:5px 2px;
+    border-bottom:1px solid var(--gray-100);
+    font-size:0.74rem;
+    color:var(--gray-700);
+  }
+  .compact-line:last-child{
+    border-bottom:none;
+  }
+  .compact-folio{
+    font-weight:800;
+    color:var(--gray-900);
+  }
+
+  @media (max-width: 900px){
+    .compact-line{
+      grid-template-columns:1fr;
+      gap:2px;
+      padding:8px 2px;
+    }
+    .compact-tech-title{
+      flex-direction:column;
+      align-items:flex-start;
+    }
+  }
+
+  /* PRINT */
+  @media print{
+    nav,
+    .filters,
+    #generalCard,
+    #statsSection,
+    #chartSection,
+    #logoutBtn,
+    .btn-orange,
+    .btn-outline:not(:first-child) {
+      display:none !important;
+    }
+
+    body{
+      background:#fff;
+      color:#000;
+      font-size:11px;
+    }
+
+    .main{
+      padding:0;
+      max-width:none;
+      margin:0;
+    }
+
+    .card{
+      box-shadow:none !important;
+      border:none !important;
+      margin-bottom:10px !important;
+    }
+
+    .card-header{
+      padding:8px 0 6px !important;
+      border-bottom:1px solid #bbb !important;
+    }
+
+    .card-body{
+      padding:8px 0 !important;
+    }
+
+    #summarySection,
+    #detailSection{
+      display:block !important;
+    }
+
+    #summarySection table{
+      font-size:10.5px;
+    }
+
+    #summarySection th,
+    #summarySection td{
+      padding:5px 6px !important;
+    }
+
+    .compact-tech-block,
+    .compact-line{
+      page-break-inside:avoid;
+      break-inside:avoid;
+    }
+
+    .compact-tech-block{
+      border:1px solid #bbb !important;
+      margin-bottom:8px !important;
+    }
+
+    .compact-tech-title{
+      background:#eee !important;
+      color:#000 !important;
+      border-bottom:1px solid #bbb !important;
+      padding:4px 6px !important;
+      font-size:10px !important;
+    }
+
+    .compact-lines{
+      padding:3px 5px !important;
+    }
+
+    .compact-line{
+      font-size:9px !important;
+      grid-template-columns:60px 1fr 38px 70px 64px !important;
+      gap:4px !important;
+      padding:2px 0 !important;
+      border-bottom:1px solid #e5e5e5 !important;
+    }
+
+    .compact-folio{
+      font-weight:700;
+    }
+
+    @page{
+      size:A4 portrait;
+      margin:8mm;
+    }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <span class="nav-logo">INTER<span>O</span>RURAL</span>
+    <div class="nav-sep"></div>
+    <span class="nav-dept">Gerencia</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user">Sesión: <strong id="navUser">—</strong></span>
+    <button class="btn-logout" id="logoutBtn">Cerrar sesión</button>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- RESUMEN GENERAL -->
+  <div class="card" id="generalCard" style="display:none;">
+    <div class="card-header">
+      <div>
+        <h2>Resumen general del sistema</h2>
+        <p>Órdenes totales, estado y facturación acumulada</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="stats" id="generalStats"></div>
+    </div>
+  </div>
+
+  <!-- FILTROS MANO DE OBRA -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2>Reporte de Mano de Obra</h2>
+        <p>Análisis de horas trabajadas y costos por técnico</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="filters">
+        <div class="field">
+          <label>Modo</label>
+          <select id="filterMode" onchange="onFilterChange()">
+            <option value="month">Mes específico</option>
+            <option value="all">Histórico (todas)</option>
+          </select>
+        </div>
+        <div class="field" id="monthField">
+          <label>Mes</label>
+          <input type="month" id="filterMonth" onchange="onFilterChange()"/>
+        </div>
+        <div class="field">
+          <label>Técnico</label>
+          <select id="filterTech" onchange="onFilterChange()">
+            <option value="all">Todos los técnicos</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn-orange" onclick="loadWorkReport()">Generar reporte</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTADÍSTICAS MANO DE OBRA -->
+  <div id="statsSection" style="display:none;">
+    <div class="stats" id="statsCards"></div>
+  </div>
+
+  <!-- GRÁFICA POR TÉCNICO -->
+  <div class="card" id="chartSection" style="display:none;">
+    <div class="card-header">
+      <h2>Comparativa por Técnico</h2>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" id="chartContainer"></div>
+    </div>
+  </div>
+
+  <!-- TABLA AGRUPADA -->
+  <div class="card" id="summarySection" style="display:none;">
+    <div class="card-header">
+      <h2>Resumen por Técnico</h2>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap" id="summaryTable"></div>
+    </div>
+  </div>
+
+  <!-- DETALLE DE ÓRDENES -->
+  <div class="card" id="detailSection" style="display:none;">
+    <div class="card-header">
+      <h2>Detalle de Órdenes</h2>
+      <div class="toolbar">
+        <button class="btn btn-outline" onclick="window.print()">🖨 Imprimir</button>
+        <button class="btn btn-outline" onclick="exportCSV()">📊 Exportar CSV</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="detailTable"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Supabase CDN para auth.js / checkSession / logout -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script>
+let lastReportData = null;
+
+// ── AUTH INIT ───────────────────────────────────────────────────────────────
+(async function() {
+  const session = await checkSession();
+  if (!session || session.rol !== 'gerencia') {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  document.getElementById('navUser').textContent =
+    session.nombre || session.user?.email || 'Gerencia';
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', logout);
+})();
+
+// ── GENERAL STATS ───────────────────────────────────────────────────────────
+async function loadGeneralStats() {
+  try {
+    const data = await api.getReporteGeneral();
+    const container = document.getElementById('generalStats');
+    container.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-label">Órdenes totales</div>
+        <div class="stat-value">${data.totalOrdenes}</div>
+        <div class="stat-sub">registradas en el sistema</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Abiertas</div>
+        <div class="stat-value">${data.ordenesAbiertas}</div>
+        <div class="stat-sub">pendientes de taller y refacciones</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">En proceso</div>
+        <div class="stat-value">${data.ordenesEnProceso}</div>
+        <div class="stat-sub">cerradas por uno de los departamentos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cerradas</div>
+        <div class="stat-value">${data.ordenesCerradas}</div>
+        <div class="stat-sub">taller y refacciones completados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total facturado</div>
+        <div class="stat-value">${money(data.totalFacturado)}</div>
+        <div class="stat-sub">suma de total_orden</div>
+      </div>
+    `;
+    document.getElementById('generalCard').style.display = '';
+  } catch (err) {
+    console.error('Error cargando resumen general:', err);
+    showToast('Error al cargar resumen general: ' + err.message, 'error');
+  }
+}
+
+// ── FILTROS ────────────────────────────────────────────────────────────────
+function initFilters() {
+  const now = new Date();
+  const month = now.toISOString().slice(0,7);
+  document.getElementById('filterMonth').value = month;
+}
+
+function onFilterChange() {
+  const mode = document.getElementById('filterMode').value;
+  document.getElementById('monthField').style.display = mode === 'month' ? '' : 'none';
+}
+
+// ── REPORTE MANO DE OBRA ───────────────────────────────────────────────────
+async function loadWorkReport() {
+  const mode = document.getElementById('filterMode').value;
+  const monthValue = document.getElementById('filterMonth').value;
+  const techValue = document.getElementById('filterTech').value;
+
+  const params = {};
+  if (mode === 'month' && monthValue) {
+    const [anio, mes] = monthValue.split('-');
+    params.mes = mes;
+    params.anio = anio;
+  }
+  if (techValue !== 'all') {
+    params.tecnico_id = techValue;
+  }
+
+  try {
+    const data = await api.getReporteManoObra(params);
+    lastReportData = data;
+
+    populateTechFilter(data.tecnicos);
+
+    if (!data.ordenes || !data.ordenes.length) {
+      document.getElementById('statsSection').style.display = 'none';
+      document.getElementById('chartSection').style.display = 'none';
+      document.getElementById('summarySection').style.display = 'none';
+      document.getElementById('detailSection').style.display = 'none';
+      showToast('No hay órdenes con mano de obra en el periodo seleccionado.');
+      return;
+    }
+
+    renderWorkStats(data.stats);
+    renderTechChart(data.tecnicos);
+    renderTechSummaryTable(data.tecnicos, data.stats);
+    renderOrdersCompactByTech(data.ordenes);
+
+    document.getElementById('statsSection').style.display = '';
+    document.getElementById('chartSection').style.display = '';
+    document.getElementById('summarySection').style.display = '';
+    document.getElementById('detailSection').style.display = '';
+  } catch (err) {
+    console.error('Error cargando reporte de mano de obra:', err);
+    showToast('Error al cargar reporte de mano de obra: ' + err.message, 'error');
+  }
+}
+
+function populateTechFilter(tecnicos) {
+  const sel = document.getElementById('filterTech');
+  if (sel.options.length > 1) return;
+
+  tecnicos.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.tecnico;
+    opt.textContent = t.tecnico;
+    sel.appendChild(opt);
+  });
+}
+
+// Stats globales de mano de obra
+function renderWorkStats(stats) {
+  const totalOrders = stats.total_ordenes || 0;
+  const totalHours = stats.total_horas || 0;
+  const totalAmount = stats.total_monto || 0;
+  const avgPerOrder = totalOrders ? (totalAmount / totalOrders) : 0;
+  const avgHours = totalOrders ? (totalHours / totalOrders) : 0;
+
+  document.getElementById('statsCards').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Órdenes</div>
+      <div class="stat-value">${totalOrders}</div>
+      <div class="stat-sub">con mano de obra</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Horas Totales</div>
+      <div class="stat-value">${totalHours.toFixed(1)}</div>
+      <div class="stat-sub">horas trabajadas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Monto Total</div>
+      <div class="stat-value">${money(totalAmount)}</div>
+      <div class="stat-sub">mano de obra cobrada</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Promedio / Orden</div>
+      <div class="stat-value">${money(avgPerOrder)}</div>
+      <div class="stat-sub">${avgHours.toFixed(1)}h promedio</div>
+    </div>
+  `;
+}
+
+// Gráfica por técnico
+function renderTechChart(tecnicos) {
+  if (!tecnicos || !tecnicos.length) {
+    document.getElementById('chartContainer').innerHTML = '<p style="color:var(--gray-400);font-size:0.85rem;">Sin datos por técnico.</p>';
+    return;
+  }
+  const sorted = [...tecnicos].sort((a,b) => b.monto - a.monto);
+  const maxAmount = Math.max(...sorted.map(t => t.monto || 0)) || 1;
+  document.getElementById('chartContainer').innerHTML = sorted.map(t => `
+    <div class="chart-bar">
+      <div class="chart-label">${t.tecnico}</div>
+      <div class="chart-bar-bg">
+        <div class="chart-bar-fill" style="width:${(t.monto / maxAmount * 100).toFixed(1)}%">
+          <span class="chart-bar-value">${money(t.monto || 0)}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Tabla resumen por técnico
+function renderTechSummaryTable(tecnicos, stats) {
+  const sorted = [...tecnicos].sort((a,b) => b.monto - a.monto);
+  const totalOrders = stats.total_ordenes || 0;
+  const totalHours = stats.total_horas || 0;
+  const totalAmount = stats.total_monto || 0;
+  const avgPerOrder = totalOrders ? (totalAmount / totalOrders) : 0;
+
+  document.getElementById('summaryTable').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Técnico</th>
+          <th style="text-align:right;">Órdenes</th>
+          <th style="text-align:right;">Horas</th>
+          <th style="text-align:right;">Monto</th>
+          <th style="text-align:right;">Promedio/Orden</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map(t => `
+          <tr>
+            <td><strong>${escapeHtml(t.tecnico)}</strong></td>
+            <td style="text-align:right;">${t.ordenes}</td>
+            <td style="text-align:right;">${(t.horas || 0).toFixed(1)}h</td>
+            <td style="text-align:right;">${money(t.monto || 0)}</td>
+            <td style="text-align:right;">${money(t.ordenes ? (t.monto / t.ordenes) : 0)}</td>
+          </tr>
+        `).join('')}
+        <tr class="row-total">
+          <td><strong>TOTAL</strong></td>
+          <td style="text-align:right;"><strong>${totalOrders}</strong></td>
+          <td style="text-align:right;"><strong>${totalHours.toFixed(1)}h</strong></td>
+          <td style="text-align:right;"><strong>${money(totalAmount)}</strong></td>
+          <td style="text-align:right;"><strong>${money(avgPerOrder)}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+}
+
+// ── DETALLE COMPACTO POR TÉCNICO ───────────────────────────────────────────
+function escapeHtml(v) {
+  return String(v ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function compactDate(value) {
+  if (!value) return '—';
+  const d = new Date(value + 'T12:00:00');
+  return d.toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+}
+
+function groupOrdersByTech(ordenes) {
+  const grouped = {};
+
+  (ordenes || []).forEach(o => {
+    const tech = o.tecnico_nombre || 'Sin asignar';
+
+    if (!grouped[tech]) {
+      grouped[tech] = {
+        tecnico: tech,
+        totalHoras: 0,
+        totalMonto: 0,
+        totalOrdenes: 0,
+        items: []
+      };
+    }
+
+    grouped[tech].totalHoras += parseFloat(o.horas_trabajo) || 0;
+    grouped[tech].totalMonto += parseFloat(o.total_mano_obra) || 0;
+    grouped[tech].totalOrdenes += 1;
+    grouped[tech].items.push(o);
+  });
+
+  return Object.values(grouped)
+    .sort((a, b) => a.tecnico.localeCompare(b.tecnico))
+    .map(group => ({
+      ...group,
+      items: group.items.sort((a, b) => {
+        const da = (a.fecha_termino || a.fecha_entrada || '');
+        const db = (b.fecha_termino || b.fecha_entrada || '');
+        if (da !== db) return da.localeCompare(db);
+        return (a.folio || 0) - (b.folio || 0);
+      })
+    }));
+}
+
+function renderOrdersCompactByTech(ordenes) {
+  const grouped = groupOrdersByTech(ordenes);
+  const detail = document.getElementById('detailTable');
+
+  if (!grouped.length) {
+    detail.innerHTML = `<div style="padding:12px;color:var(--gray-500)">No hay órdenes para mostrar.</div>`;
+    return;
+  }
+
+  detail.innerHTML = grouped.map(group => `
+    <div class="compact-tech-block">
+      <div class="compact-tech-title">
+        <span>${escapeHtml(group.tecnico)}</span>
+        <span>${group.totalOrdenes} órdenes · ${group.totalHoras.toFixed(2)} h · ${money(group.totalMonto)}</span>
+      </div>
+      <div class="compact-lines">
+        ${group.items.map(o => `
+          <div class="compact-line">
+            <span class="compact-folio">#${o.folio ?? '—'}</span>
+            <span>${escapeHtml((o.cliente_nombre || '—') + (o.equipo_descripcion ? ' · ' + o.equipo_descripcion : ''))}</span>
+            <span>${(parseFloat(o.horas_trabajo) || 0).toFixed(1)}h</span>
+            <span>${money(parseFloat(o.total_mano_obra) || 0)}</span>
+            <span>${compactDate(o.fecha_termino || o.fecha_entrada)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── EXPORT CSV ───────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!lastReportData || !lastReportData.ordenes || !lastReportData.ordenes.length) {
+    showToast('No hay datos para exportar.', 'info');
+    return;
+  }
+  const orders = lastReportData.ordenes;
+  let csv = 'Folio,Cliente,Equipo,Técnico,Fecha Entrada,Fecha Término,Horas,Tarifa/h,Mano Obra\n';
+  orders.forEach(o => {
+    csv += `${o.folio},"${(o.cliente_nombre || '').replaceAll('"','""')}","${(o.equipo_descripcion || '').replaceAll('"','""')}","${(o.tecnico_nombre || '').replaceAll('"','""')}",${o.fecha_entrada || ''},${o.fecha_termino || ''},${o.horas_trabajo || 0},${o.tarifa_hora || 0},${o.total_mano_obra || 0}\n`;
+  });
+
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `reporte-mano-obra-${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+}
+
+// init
+initFilters();
+loadGeneralStats();
+</script>
+</body>
+</html>

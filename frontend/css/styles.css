@@ -1,0 +1,159 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   ESTILOS GLOBALES - Sistema de Órdenes de Servicio
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Colores principales */
+  --orange: #E8500A;
+  --orange-hover: #C43F06;
+  --orange-glow: rgba(232, 80, 10, 0.15);
+
+  /* Colores de estado */
+  --green: #2E7D32;
+  --green-light: #E8F5E9;
+  --blue: #1565C0;
+  --blue-light: #E3F2FD;
+  --amber: #E65100;
+  --amber-light: #FFF3E0;
+  --red: #C62828;
+  --red-light: #FFEBEE;
+
+  /* Grises */
+  --bg: #F4F5F7;
+  --white: #FFFFFF;
+  --gray-900: #1C1C1C;
+  --gray-700: #3D3D3D;
+  --gray-500: #6B6B6B;
+  --gray-400: #8A8A8A;
+  --gray-300: #B0B0B0;
+  --gray-200: #D4D4D4;
+  --gray-100: #F0F0F0;
+  --gray-50: #F8F8F8;
+
+  /* Tipografía */
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Bordes */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+
+  /* Sombras */
+  --shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--gray-900);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Links */
+a {
+  color: var(--orange);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Botones base */
+button {
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Inputs base */
+input, select, textarea {
+  font-family: var(--font);
+}
+
+/* Utilidades */
+.text-center { text-align: center; }
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+
+/* Loading spinner */
+.spinner {
+  border: 3px solid var(--gray-200);
+  border-top: 3px solid var(--orange);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Toast notifications (placeholder) */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--gray-900);
+  color: white;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+.toast.warning { background: var(--amber); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  :root {
+    font-size: 14px;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+  }
+
+  nav, .no-print, button, .btn {
+    display: none !important;
+  }
+}

@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Refacciones · Órdenes de Servicio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --orange: #E8500A; --orange-hover: #C43F06; --orange-glow: rgba(232,80,10,0.15);
+  --green: #2E7D32; --blue: #1565C0; --amber: #E65100; --red: #C62828;
+  --bg: #F4F5F7; --white: #FFFFFF;
+  --gray-900: #1C1C1C; --gray-700: #3D3D3D; --gray-500: #6B6B6B;
+  --gray-400: #8A8A8A; --gray-300: #B0B0B0; --gray-200: #D4D4D4;
+  --gray-100: #F0F0F0; --gray-50: #F8F8F8;
+  --font: 'Inter', sans-serif;
+  --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
+}
+
+*, *:before, *:after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font); background: var(--bg); color: var(--gray-900); min-height: 100vh; }
+
+/* NAV */
+nav { 
+  background: var(--gray-900); height: 56px; display: flex; align-items: center; 
+  justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.nav-brand { display: flex; align-items: center; gap: 12px; }
+.nav-logo { font-size: 15px; font-weight: 900; color: #fff; letter-spacing: 0.04em; }
+.nav-logo span { color: var(--orange); }
+.nav-sep { width: 1px; height: 20px; background: #3D3D3D; }
+.nav-dept { font-size: 0.8rem; font-weight: 600; color: var(--gray-400); letter-spacing: 0.06em; text-transform: uppercase; }
+.nav-right { display: flex; align-items: center; gap: 14px; }
+.nav-user { font-size: 0.82rem; color: var(--gray-300); }
+.nav-user strong { color: #fff; }
+.btn-logout {
+  background: none; border: 1px solid #3D3D3D; color: var(--gray-400);
+  font-family: var(--font); font-size: 0.78rem; padding: 5px 12px;
+  border-radius: 6px; cursor: pointer; transition: all 0.15s;
+}
+.btn-logout:hover { border-color: var(--gray-300); color: #fff; }
+
+/* LAYOUT */
+.main { padding: 24px; max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow); display: flex; flex-direction: column; height: calc(100vh - 112px);
+  position: sticky; top: 80px; overflow: hidden;
+}
+.sidebar-header { padding: 16px; border-bottom: 1px solid var(--gray-100); }
+.sidebar-header h2 { font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; }
+.sidebar-search {
+  width: 100%; padding: 8px 12px; border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm); font-family: var(--font); font-size: 0.83rem;
+  outline: none; background: var(--gray-50);
+}
+.sidebar-search:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-glow); }
+.sidebar-filters { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.filter-chip {
+  padding: 4px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 700;
+  border: 1.5px solid var(--gray-200); background: none; cursor: pointer;
+  transition: all 0.15s; font-family: var(--font);
+}
+.filter-chip.active { background: var(--orange); border-color: var(--orange); color: #fff; }
+.filter-chip:not(.active):hover { border-color: var(--gray-400); }
+.orders-list { overflow-y: auto; flex: 1; }
+.order-item {
+  padding: 14px 16px; border-bottom: 1px solid var(--gray-100);
+  cursor: pointer; transition: background 0.12s;
+}
+.order-item:hover { background: var(--gray-50); }
+.order-item.selected { background: #FFF4EE; border-left: 3px solid var(--orange); }
+.oi-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+.oi-folio { font-size: 0.78rem; font-weight: 800; color: var(--orange); }
+.oi-client { font-size: 0.875rem; font-weight: 700; color: var(--gray-900); }
+.oi-item { font-size: 0.78rem; color: var(--gray-500); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oi-meta { display: flex; gap: 6px; margin-top: 6px; align-items: center; flex-wrap: wrap; }
+.empty-list { padding: 32px 16px; text-align: center; color: var(--gray-400); font-size: 0.83rem; }
+
+/* EDITOR */
+.editor { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow-y: auto; }
+.editor-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 80px 40px; color: var(--gray-400); text-align: center;
+}
+.editor-empty svg { margin-bottom: 16px; }
+.editor-empty p { font-size: 0.875rem; }
+
+/* CARD */
+.card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
+.card-header { padding: 18px 22px; border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.card-header h2 { font-size: 1.1rem; font-weight: 800; }
+.card-header p { font-size: 0.8rem; color: var(--gray-500); margin-top: 2px; }
+.card-body { padding: 20px 22px; }
+
+/* GRID */
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, 1fr); }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } }
+
+/* FIELD */
+.field { display: grid; gap: 6px; }
+.field label { font-size: 0.78rem; font-weight: 600; color: var(--gray-500); letter-spacing: 0.03em; text-transform: uppercase; }
+.field input, .field select, .field textarea {
+  width: 100%; padding: 10px 13px; background: var(--gray-50); border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm); font-family: var(--font); font-size: 0.875rem;
+  color: var(--gray-900); outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-glow); }
+.field input:read-only, .field textarea:read-only { background: var(--gray-100); color: var(--gray-500); cursor: default; }
+.field textarea { resize: vertical; min-height: 80px; }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+  border-radius: var(--radius-sm); font-family: var(--font); font-size: 0.83rem;
+  font-weight: 700; border: none; cursor: pointer; transition: all 0.15s;
+}
+.btn-orange { background: var(--orange); color: #fff; box-shadow: 0 2px 8px rgba(232,80,10,0.28); }
+.btn-orange:hover { background: var(--orange-hover); transform: translateY(-1px); }
+.btn-outline { background: var(--white); color: var(--gray-700); border: 1.5px solid var(--gray-200); }
+.btn-outline:hover { border-color: var(--gray-400); background: var(--gray-50); }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: #1B5E20; }
+.btn-red { background: var(--red); color: #fff; font-size: 0.7rem; padding: 4px 8px; }
+.btn-red:hover { background: #8B0000; }
+.btn-sm { padding: 6px 12px; font-size: 0.78rem; }
+.btn:disabled { opacity: 0.45; pointer-events: none; }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* BADGES */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px;
+  border-radius: 99px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em;
+}
+.b-open { background: #E8F5E9; color: #2E7D32; }
+.b-progress { background: #FFF3E0; color: #E65100; }
+.b-closed { background: #F3F4F6; color: #6B6B6B; }
+.b-warranty { background: #FFF8E1; color: #F57F17; }
+
+/* ITEMS */
+.items-wrap { display: grid; gap: 8px; }
+.item-row {
+  display: grid; grid-template-columns: 60px 120px 1fr 130px 110px 90px 32px;
+  gap: 8px; padding: 8px 12px; background: var(--gray-50); border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-200);
+}
+.item-row.row-misc { border-left: 3px solid var(--amber); }
+.item-row.row-nw { border-left: 3px solid var(--red); background: #FFF5F5; }
+.item-row.row-labor { border-left: 3px solid var(--blue); }
+.col-label { font-size: 0.66rem; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 3px; }
+.col-input {
+  width: 100%; padding: 6px 8px; border: 1px solid var(--gray-200);
+  border-radius: 6px; font-size: 0.78rem; font-family: var(--font);
+  background: #fff; outline: none;
+}
+.col-input:focus { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange-glow); }
+.col-input:read-only { background: var(--gray-100); color: var(--gray-500); }
+
+/* TOTALS */
+.totals-card { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 16px; display: grid; gap: 8px; }
+.total-row { display: flex; justify-content: space-between; font-size: 0.855rem; color: var(--gray-700); }
+.total-row:last-child { border-top: 1px solid var(--gray-200); padding-top: 8px; font-weight: 700; font-size: 1rem; color: var(--gray-900); }
+.total-grand { color: var(--green); }
+.total-warranty-note { font-size: 0.72rem; color: var(--gray-500); margin-top: 6px; font-style: italic; }
+
+/* WARRANTY */
+.warranty-box { background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: var(--radius); padding: 18px; display: grid; gap: 14px; }
+.wt { font-size: 0.82rem; font-weight: 700; color: #92400E; display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+
+/* MODAL */
+.modal-bg { 
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.modal-header h3 { font-size: 1rem; font-weight: 700; }
+.modal-body { padding: 24px; overflow-y: auto; display: grid; gap: 16px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+.btn-close-modal { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--gray-400); line-height: 1; padding: 2px 6px; }
+.btn-close-modal:hover { color: var(--gray-900); }
+
+/* PDF */
+.pdf-page { background: #fff; padding: 40px; font-size: 11px; }
+.pdf-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.pdf-logos { display: flex; gap: 16px; }
+.pdf-company h1 { font-size: 18px; font-weight: 900; color: #111; margin-bottom: 8px; }
+.pdf-company p { font-size: 9px; color: #555; line-height: 1.5; }
+.pdf-folio-box { text-align: right; background: var(--gray-50); padding: 12px; border-radius: 8px; }
+.pdf-folio-num { font-size: 24px; font-weight: 900; color: var(--orange); }
+.pdf-divider { border: none; border-top: 2px solid var(--gray-200); margin: 16px 0; }
+.pdf-client-box { background: var(--gray-50); padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+.pdf-warranty-strip { background: var(--amber); color: #fff; padding: 8px; text-align: center; font-weight: 700; margin: 12px 0; border-radius: 6px; }
+.pdf-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 16px; }
+.pdf-table thead tr { background: var(--gray-900); color: #fff; }
+.pdf-table th { padding: 8px; text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.pdf-table td { padding: 6px 8px; border-bottom: 1px solid var(--gray-100); }
+.pdf-table tbody tr:last-child td { border-bottom: none; }
+.row-nw { background: #FFF5F5; }
+.row-misc { color: var(--amber); }
+.row-labor { color: var(--blue); font-weight: 700; }
+.pdf-totals { background: var(--gray-50); padding: 12px; border-radius: 8px; }
+.pdf-totals-row { display: flex; justify-content: space-between; padding: 4px 0; }
+.pdf-totals-row.grand { border-top: 2px solid var(--gray-300); padding-top: 8px; font-weight: 900; font-size: 14px; }
+.pdf-notes { background: #FFF8E1; padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 9px; }
+.pdf-footer-note { font-size: 8px; color: var(--gray-500); margin-top: 12px; text-align: center; }
+.pdf-signs { display: flex; justify-content: space-around; margin-top: 40px; }
+.sign-line { width: 200px; border-top: 1px solid var(--gray-300); padding-top: 6px; }
+.sign-label { font-size: 9px; font-weight: 700; text-align: center; }
+.sign-sublabel { font-size: 8px; color: var(--gray-500); text-align: center; }
+
+/* PRINT */
+@media print {
+  nav, .sidebar, .modal-bg, .btn, .toolbar { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none; border: none; }
+  .main { grid-template-columns: 1fr; padding: 0; }
+}
+
+@media (max-width: 1100px) { .main { grid-template-columns: 1fr; } .sidebar { height: auto; position: relative; top: 0; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <span class="nav-logo">INTER<span> </span>RURAL</span>
+    <div class="nav-sep"></div>
+    <span class="nav-dept">Refacciones</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user">Sesión: <strong id="navUser"></strong></span>
+    <button class="btn-logout" id="logoutBtn">Cerrar sesión</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Órdenes de Servicio</h2>
+      <input class="sidebar-search" id="sideSearch" placeholder="Buscar folio, cliente..."/>
+      <div class="sidebar-filters">
+        <button class="filter-chip active" data-f="todas" onclick="setFilter('todas', this)">Todas</button>
+        <button class="filter-chip" data-f="Abierta" onclick="setFilter('Abierta', this)">Abiertas</button>
+        <button class="filter-chip" data-f="En proceso" onclick="setFilter('En proceso', this)">En proceso</button>
+        <button class="filter-chip" data-f="Cerrada" onclick="setFilter('Cerrada', this)">Cerradas</button>
+      </div>
+    </div>
+    <div class="orders-list" id="ordersList"></div>
+  </aside>
+
+  <!-- EDITOR -->
+  <main class="editor" id="editorMain">
+    <div class="editor-empty" id="editorEmpty">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>
+      <p>Selecciona una orden de la lista para comenzar.</p>
+    </div>
+    <div id="editorContent" style="display:none;"></div>
+  </main>
+
+</div>
+
+<!-- MODAL PDF -->
+<div class="modal-bg" id="pdfModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Vista previa · Orden de Servicio</h3>
+      <button class="btn-close-modal" onclick="closePdfModal()">×</button>
+    </div>
+    <div class="modal-body" id="pdfModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closePdfModal()">Cerrar</button>
+      <button class="btn btn-orange" onclick="doPrint()">Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+</div>
+
+
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// ======================== GLOBALS ========================
+let allOrders = [];
+let activeFilter = 'todas';
+let selectedId = null;
+let saveQueue = new Map(); // Evita guardados concurrentes
+
+// ======================== AUTH ========================
+(async function() {
+  const session = await checkSession();
+  if (!session || session.rol !== 'refacciones') {
+    window.location.href = 'index.html';
+    return;
+  }
+  document.getElementById('navUser').textContent = session.nombre || session.email;
+  init();
+})();
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await logout();
+  window.location.href = 'index.html';
+});
+
+// ======================== INIT ========================
+async function init() {
+  await loadOrders();
+  renderSidebar();
+}
+
+// ======================== LOAD ORDERS (CONSERVA SELECCIÓN) ========================
+async function loadOrders() {
+  try {
+    const ordersFromBackend = await api.getOrdenes();
+    const newOrders = ordersFromBackend.map(order => mapOrderFromBackend(order));
+    newOrders.forEach(o => computeOrder(o));
+
+    // Preservar la orden seleccionada si existe
+    const selectedOrder = selectedId ? allOrders.find(o => o.id === selectedId) : null;
+    allOrders = newOrders;
+
+    if (selectedOrder) {
+      const updatedSelected = allOrders.find(o => o.id === selectedOrder.id);
+      if (updatedSelected) {
+        selectedId = updatedSelected.id;
+      } else {
+        selectedId = null;
+      }
+    }
+    renderSidebar();
+    if (selectedId) renderEditor();
+  } catch (error) {
+    console.error('Error cargando órdenes:', error);
+  }
+}
+
+// Mapeador desde backend a frontend
+function mapOrderFromBackend(order) {
+  return {
+    id: order.id,
+    numeroorden: order.folio,
+    clientenombre: order.cliente_nombre,
+    equipomodelo: order.equipo_descripcion,
+    equiposerial: order.equipo_serial,
+    fechaentrada: order.fecha_entrada,
+    fechatermino: order.fecha_termino,
+    tecniconombre: order.tecnico_nombre,
+    fallareportada: order.falla_reportada,
+    esgarantia: order.es_garantia,
+    cerradataller: order.cerrada_taller,
+    cerradarefacciones: order.cerrada_refacciones,
+    fechacierrerefacciones: order.fecha_cierre_refacciones ?? null,
+    horastrabajo: parseFloat(order.horas_trabajo) || 0,
+    tarifahora: parseFloat(order.tarifa_hora) || 0,
+    totalmanoobra: parseFloat(order.total_mano_obra) || 0,
+    totalorden: parseFloat(order.total_orden) || 0,
+    createdat: order.created_at,
+    parts: (order.piezas || []).map(p => ({
+      id: p.id,
+      cantidad: p.cantidad || 1,
+      codigo: p.codigo || '',
+      descripcion: p.descripcion || '',
+      numeroserie: p.numero_serie || '',
+      preciounitarioconiva: parseFloat(p.precio_unitario_con_iva) || 0,
+      excluidagarantia: p.excluida_garantia || false,
+      iva: 0, total: 0
+    })),
+    misc: (order.gastos_diversos || []).map(g => ({
+      id: g.id,
+      cantidad: g.cantidad || 1,
+      codigo: g.codigo || '',
+      descripcion: g.descripcion || '',
+      referencia: g.referencia || '',
+      preciounitarioconiva: parseFloat(g.precio_unitario_con_iva) || 0,
+      iva: 0, total: 0
+    }))
+  };
+}
+
+// ======================== COMPUTE ORDER ========================
+function computeOrder(o) {
+  o.parts = o.parts || [];
+  o.misc = o.misc || [];
+
+  o.parts.forEach(i => {
+    const totalConIva = (i.preciounitarioconiva * i.cantidad);
+    const base = totalConIva / 1.16;
+    i.iva = totalConIva - base;
+    i.subtotal = base;
+    i.total = totalConIva;
+  });
+
+  o.misc.forEach(i => {
+    const totalConIva = (i.preciounitarioconiva * i.cantidad);
+    const base = totalConIva / 1.16;
+    i.iva = totalConIva - base;
+    i.subtotal = base;
+    i.total = totalConIva;
+  });
+
+  const laborTotal = (o.horastrabajo || 0) * (o.tarifahora || 0);
+  o.laborBase = laborTotal / 1.16;
+  o.laborIva = laborTotal - o.laborBase;
+  o.labor = laborTotal;
+
+  if (o.esgarantia) {
+    const partsCharged = o.parts.filter(i => i.excluidagarantia).reduce((s, i) => s + i.total, 0);
+    const miscTotal = o.misc.reduce((s, i) => s + i.total, 0);
+    o.total = partsCharged + miscTotal + o.labor;
+  } else {
+    o.total = o.parts.reduce((s, i) => s + i.total, 0) + o.misc.reduce((s, i) => s + i.total, 0) + o.labor;
+  }
+
+  if (o.cerradataller && o.cerradarefacciones) {
+    o.status = 'Cerrada';
+  } else if (o.cerradataller || o.cerradarefacciones || o.parts.length) {
+    o.status = 'En proceso';
+  } else {
+    o.status = 'Abierta';
+  }
+
+  return o;
+}
+
+// ======================== FILTERS ========================
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderSidebar();
+}
+
+// ======================== RENDER SIDEBAR ========================
+function renderSidebar() {
+  const q = document.getElementById('sideSearch').value.toLowerCase();
+  let orders = [...allOrders];
+
+  if (activeFilter !== 'todas') {
+    orders = orders.filter(o => o.status === activeFilter);
+  }
+
+  if (q) {
+    orders = orders.filter(o => 
+      String(o.numeroorden).includes(q) ||
+      o.clientenombre.toLowerCase().includes(q) ||
+      o.equipomodelo.toLowerCase().includes(q)
+    );
+  }
+
+  document.getElementById('ordersList').innerHTML = orders.length ? orders.map(o => `
+    <div class="order-item ${selectedId === o.id ? 'selected' : ''}" onclick="selectOrder('${o.id}')">
+      <div class="oi-top">
+        <span class="oi-folio">N° ${o.numeroorden}</span>
+        ${statusBadge(o)}
+      </div>
+      <div class="oi-client">${o.clientenombre}</div>
+      <div class="oi-item">${o.equipomodelo}</div>
+      <div class="oi-meta">
+        <span style="font-size:0.72rem;color:var(--gray-400)">${formatDate(o.fechaentrada || o.createdat)}</span>
+        ${o.esgarantia ? '<span class="badge b-warranty">Garantía</span>' : ''}
+        <span style="font-size:0.72rem;font-weight:700;color:var(--green)">${money(o.totalorden || 0)}</span>
+      </div>
+    </div>
+  `).join('') : '<div class="empty-list">Sin órdenes para este filtro.</div>';
+}
+
+async function selectOrder(id) {
+  selectedId = id;
+  renderSidebar(); // para marcar seleccionada
+
+  // Cargar detalle desde API (incluye piezas y gastos)
+  try {
+    const data = await api.getOrden(id); // GET /api/ordenes/:id
+
+    // Mapear snake_case → camelCase que usas en refacciones.html
+    const mapped = {
+      id: data.id,
+      numeroorden: data.folio,
+      clientenombre: data.cliente_nombre,
+      equipomodelo: data.equipo_descripcion,
+      equiposerial: data.equipo_serial,
+      fechaentrada: data.fecha_entrada,
+      fechatermino: data.fecha_termino,
+      tecniconombre: data.tecnico_nombre,
+      fallareportada: data.falla_reportada,
+      esgarantia: data.es_garantia,
+      cerradataller: data.cerrada_taller,
+      cerradarefacciones: data.cerrada_refacciones,
+      horastrabajo: parseFloat(data.horas_trabajo) || 0,
+      tarifahora: parseFloat(data.tarifa_hora) || 0,
+      labor: parseFloat(data.total_mano_obra) || 0,
+      total: parseFloat(data.total_orden) || 0,
+      createdat: data.created_at,
+      parts: (data.piezas || []).map(p => ({
+        id: p.id,
+        cantidad: p.cantidad || 1,
+        codigo: p.codigo || '',
+        descripcion: p.descripcion || '',
+        numeroserie: p.numero_serie || '',
+        preciounitarioconiva: p.precio_unitario_con_iva || 0,
+        excluidagarantia: p.excluida_garantia || false,
+        subtotal: p.subtotal || 0,
+        iva: p.iva || 0,
+        total: p.total || 0
+      })),
+      misc: (data.gastos_diversos || []).map(g => ({
+        id: g.id,
+        cantidad: g.cantidad || 1,
+        codigo: g.codigo || '',
+        descripcion: g.descripcion || '',
+        referencia: g.referencia || '',
+        preciounitarioconiva: g.precio_unitario_con_iva || 0,
+        subtotal: g.subtotal || 0,
+        iva: g.iva || 0,
+        total: g.total || 0
+      }))
+    };
+
+    // Reemplazar la orden correspondiente en allOrders
+    const idx = allOrders.findIndex(o => o.id === id);
+    if (idx !== -1) {
+      allOrders[idx] = computeOrder(mapped);
+    } else {
+      allOrders.push(computeOrder(mapped));
+    }
+
+    renderEditor();
+  } catch (err) {
+    console.error('Error cargando orden:', err);
+    alert('Error al cargar detalles de la orden: ' + err.message);
+  }
+}
+
+// ======================== RENDER EDITOR ========================
+function renderEditor() {
+  const o = allOrders.find(o => o.id === selectedId);
+  document.getElementById('editorEmpty').style.display = o ? 'none' : '';
+  document.getElementById('editorContent').style.display = o ? '' : 'none';
+  if (!o) return;
+
+  const canEdit = !o.cerradarefacciones;
+
+  document.getElementById('editorContent').innerHTML = `
+    ${infoHtml(o, canEdit)}
+    ${partsHtml(o, canEdit)}
+    ${miscHtml(o, canEdit)}
+    ${laborHtml(o, canEdit)}
+    ${totalsHtml(o)}
+    ${actionsHtml(o, canEdit)}
+  `;
+}
+
+function statusBadge(o) {
+  if (o.cerradataller && o.cerradarefacciones) return '<span class="badge b-closed">Cerrada</span>';
+  if (o.cerradataller || o.cerradarefacciones || o.parts?.length) return '<span class="badge b-progress">En proceso</span>';
+  return '<span class="badge b-open">Abierta</span>';
+}
+
+// HTML BUILDERS
+function infoHtml(o, canEdit) {
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Orden N° ${o.numeroorden} · ${o.clientenombre}</h2>
+          <p>${o.equipomodelo} · Técnico: ${o.tecniconombre} · Entrada: ${formatDate(o.fechaentrada)}</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          ${statusBadge(o)}
+          ${o.esgarantia ? '<span class="badge b-warranty">⚡ Garantía</span>' : ''}
+          ${o.cerradarefacciones
+          ? `<span class="badge b-closed">✓ Cerrado por Refacciones${o.fechacierrerefacciones ? ' · ' + formatDate(o.fechacierrerefacciones) : ''}</span>`
+          : ''}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid g3">
+          <div class="field"><label>Cliente</label><input value="${escapeHtml(o.clientenombre)}" readonly/></div>
+          <div class="field"><label>Equipo</label><input value="${escapeHtml(o.equipomodelo)}" readonly/></div>
+          <div class="field"><label>No. serie</label><input value="${escapeHtml(o.equiposerial || '')}" readonly/></div>
+          <div class="field"><label>Técnico</label><input value="${escapeHtml(o.tecniconombre)}" readonly/></div>
+          <div class="field">
+            <label>Fecha entrada</label>
+            <input type="date" value="${o.fechaentrada || ''}" readonly/>
+          </div>
+          <div class="field">
+            <label>Fecha término taller</label>
+            <input type="date" value="${o.fechatermino || ''}" readonly/>
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label>Falla reportada</label>
+          <textarea readonly>${escapeHtml(o.fallareportada || '')}</textarea>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function partsHtml(o, canEdit) {
+  const parts = o.parts || [];
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Piezas y Refacciones</h2>
+          ${o.esgarantia ? '<p style="color:var(--amber)">⚡ Garantía activa: marca las piezas que <strong>NO</strong> entran en garantía para cobrarlas al cliente.</p>' : '<p>Captura los conceptos de la reparación.</p>'}
+        </div>
+        ${canEdit ? '<button class="btn btn-orange btn-sm" onclick="addItem(\'parts\')">+ Agregar pieza</button>' : ''}
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:60px 120px 1fr 130px 110px 90px ${o.esgarantia ? '110px' : ''} 32px;gap:8px;padding:0 12px 6px;font-size:0.66rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.04em">
+          <span>Cant.</span><span>Código</span><span>Descripción</span><span>No. Serie</span>
+          <span>Precio c/IVA</span><span>Total</span>${o.esgarantia ? '<span>No garantía</span>' : ''}<span></span>
+        </div>
+        <div class="items-wrap" id="parts-container">
+          ${parts.map(i => partRowHtml(i, o.esgarantia, canEdit)).join('')}
+          ${!parts.length ? '<div style="color:var(--gray-400);font-size:0.83rem;padding:10px 12px">Sin piezas capturadas.</div>' : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function partRowHtml(item, isWarranty, canEdit) {
+  const nwClass = item.excluidagarantia ? ' row-nw' : '';
+  return `
+    <div class="item-row${nwClass}" id="pr-${item.id}">
+      <div><span class="col-label">Cant.</span><input class="col-input" type="number" min="0" value="${item.cantidad}" ${canEdit ? `oninput="updatePart('${item.id}','cantidad',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">Código</span><input class="col-input" value="${escapeHtml(item.codigo)}" placeholder="RIMPDJ-816" ${canEdit ? `oninput="updatePart('${item.id}','codigo',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">Descripción</span><input class="col-input" value="${escapeHtml(item.descripcion)}" placeholder="Nombre de la pieza" ${canEdit ? `oninput="updatePart('${item.id}','descripcion',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">No. Serie pieza</span><input class="col-input" value="${escapeHtml(item.numeroserie)}" placeholder="S/N" ${canEdit ? `oninput="updatePart('${item.id}','numeroserie',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">Precio c/IVA</span><input class="col-input" type="number" min="0" step="0.01" value="${item.preciounitarioconiva || 0}" ${canEdit ? `oninput="updatePart('${item.id}','preciounitarioconiva',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">Total</span><input class="col-input" id="pr-total-${item.id}" value="${money(item.total || 0)}" readonly/></div>
+      ${isWarranty ? `<div><span class="col-label">No garantía</span><label style="display:flex;align-items:center;gap:6px;padding-top:8px;font-size:0.78rem;cursor:${canEdit ? 'pointer' : 'default'}"><input type="checkbox" ${item.excluidagarantia ? 'checked' : ''} ${canEdit ? `onchange="toggleNoWarranty('${item.id}',this.checked)"` : 'disabled'} style="width:16px;height:16px;accent-color:var(--red)"/> <span style="color:${item.excluidagarantia ? 'var(--red)' : 'var(--gray-500)'}">${item.excluidagarantia ? 'Se cobra' : 'Garantía'}</span></label></div>` : ''}
+      <div style="display:flex;align-items:flex-end;padding-bottom:2px"><button class="btn-red" ${canEdit ? `onclick="removePart('${item.id}')"` : 'disabled'}>✕</button></div>
+    </div>
+  `;
+}
+
+function miscHtml(o, canEdit) {
+  const misc = o.misc || [];
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div><h2>Gastos Diversos</h2><p>Flete, herramientas, consumibles u otros gastos. Siempre se cobran al cliente.</p></div>
+        ${canEdit ? '<button class="btn btn-outline btn-sm" onclick="addItem(\'misc\')">+ Agregar gasto</button>' : ''}
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:60px 120px 1fr 130px 110px 90px 32px;gap:8px;padding:0 12px 6px;font-size:0.66rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.04em">
+          <span>Cant.</span><span>Código</span><span>Descripción</span><span>Ref./Notas</span>
+          <span>Precio c/IVA</span><span>Total</span><span></span>
+        </div>
+        <div class="items-wrap" id="misc-container">
+          ${misc.map(i => miscRowHtml(i, canEdit)).join('')}
+          ${!misc.length ? '<div style="color:var(--gray-400);font-size:0.83rem;padding:10px 12px">Sin gastos capturados.</div>' : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function miscRowHtml(item, canEdit) {
+  return `
+    <div class="item-row row-misc" id="mc-${item.id}">
+      <div><span class="col-label">Cant.</span><input class="col-input" type="number" min="0" value="${item.cantidad}" ${canEdit ? `oninput="updateMisc('${item.id}','cantidad',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">Código/Ref.</span><input class="col-input" value="${escapeHtml(item.codigo)}" ${canEdit ? `oninput="updateMisc('${item.id}','codigo',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">Descripción</span><input class="col-input" value="${escapeHtml(item.descripcion)}" placeholder="Flete, herramienta..." ${canEdit ? `oninput="updateMisc('${item.id}','descripcion',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">Ref./Nota</span><input class="col-input" value="${escapeHtml(item.referencia)}" ${canEdit ? `oninput="updateMisc('${item.id}','referencia',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">Precio c/IVA</span><input class="col-input" type="number" min="0" step="0.01" value="${item.preciounitarioconiva || 0}" ${canEdit ? `oninput="updateMisc('${item.id}','preciounitarioconiva',this.value)"` : 'readonly'}/></div>
+      <div><span class="col-label">Total</span><input class="col-input" id="mc-total-${item.id}" value="${money(item.total || 0)}" readonly/></div>
+      <div style="display:flex;align-items:flex-end;padding-bottom:2px"><button class="btn-red" ${canEdit ? `onclick="removeMisc('${item.id}')"` : 'disabled'}>✕</button></div>
+    </div>
+  `;
+}
+
+function laborHtml(o, canEdit) {
+  return `
+    <div class="card">
+      <div class="card-header"><div><h2>Mano de Obra</h2><p>Horas trabajadas × tarifa por hora.</p></div></div>
+      <div class="card-body">
+        <div class="grid g4" style="align-items:end">
+          <div class="field"><label>Horas trabajadas</label><input type="number" id="laborHours" min="0" step="0.5" value="${o.horastrabajo || 0}" ${canEdit ? 'oninput="updateLabor()"' : 'readonly'}/></div>
+          <div class="field"><label>Tarifa / hora</label><input type="number" id="laborRate" min="0" step="10" value="${o.tarifahora || 0}" ${canEdit ? 'oninput="updateLabor()"' : 'readonly'}/></div>
+          <div class="field"><label>Total mano de obra</label><input id="laborTotal" value="${money(o.labor || 0)}" readonly/></div>
+          <div style="padding-bottom:2px;font-size:0.78rem;color:var(--gray-500)">${(o.horastrabajo || 0)}h × ${money(o.tarifahora || 0)}/h</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function totalsHtml(o) {
+  return `
+    <div class="card">
+      <div class="card-header"><div><h2>Resumen de Cobro</h2></div></div>
+      <div class="card-body">
+        <div class="totals-card" id="totals-display">${totalsInnerHtml(o)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function totalsInnerHtml(o) {
+  const partsConIva = o.esgarantia ? 
+    o.parts.filter(i => i.excluidagarantia).reduce((s, i) => s + i.total, 0) :
+    o.parts.reduce((s, i) => s + i.total, 0);
+  const miscConIva = o.misc.reduce((s, i) => s + i.total, 0);
+  const warrantyTotal = o.esgarantia ? o.parts.filter(i => !i.excluidagarantia).reduce((s, i) => s + i.total, 0) : 0;
+  const totalConIva = partsConIva + miscConIva + (o.labor || 0);
+  const subtotal = totalConIva / 1.16;
+  const iva = totalConIva - subtotal;
+
+  return `
+    ${o.esgarantia ? `<div class="total-row"><span>Piezas en garantía (sin cobro)</span><strong style="text-decoration:line-through;color:var(--gray-500)">${money(warrantyTotal)}</strong></div>` : ''}
+    <div class="total-row"><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
+    <div class="total-row"><span>IVA (16%)</span><strong>${money(iva)}</strong></div>
+    <div class="total-row"><span>TOTAL A COBRAR</span><strong class="total-grand">${money(totalConIva)}</strong></div>
+    ${o.esgarantia ? '<p class="total-warranty-note">⚡ Solo se cobran piezas "No garantía", gastos y mano de obra (si aplica).</p>' : ''}
+  `;
+}
+
+function actionsHtml(o, canEdit) {
+  return `
+    <div class="card">
+      <div class="card-body">
+        <div class="toolbar">
+          ${canEdit ? '<button class="btn btn-green" onclick="closeParts()">✓ Cerrar orden (mi parte)</button>' : ''}
+          <button class="btn btn-orange" onclick="previewPdf()">📄 Vista previa PDF</button>
+          <button class="btn btn-outline" onclick="doPrint()">🖨 Imprimir</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Debounce por id de pieza para no spamear PATCH
+const partSaveTimers = {};
+
+
+// Helper para agregar un gasto (misc) usando la API
+async function addMiscFromApi(o) {
+  try {
+    const created = await api.createGasto({
+      orden_id: o.id,
+      cantidad: 1,
+      codigo: '',
+      descripcion: '',
+      referencia: '',
+      precio_unitario_con_iva: 0
+    });
+
+    const newMisc = {
+      id: created.id,
+      cantidad: created.cantidad || 1,
+      codigo: created.codigo || '',
+      descripcion: created.descripcion || '',
+      referencia: created.referencia || '',
+      preciounitarioconiva: created.precio_unitario_con_iva || 0,
+      subtotal: created.subtotal || 0,
+      iva: created.iva || 0,
+      total: created.total || 0
+    };
+
+    o.misc = o.misc || [];
+    o.misc.push(newMisc);
+
+    computeOrder(o);
+    renderEditor();
+    renderSidebar();
+  } catch (err) {
+    console.error('Error creando gasto:', err);
+    alert('Error al agregar gasto: ' + err.message);
+  }
+}
+
+// Agregar pieza
+async function addItem(type) {
+  const o = allOrders.find(o => o.id === selectedId);
+  if (!o || o.cerradarefacciones) return;
+
+  try {
+    if (type === 'misc') {
+      // Lo manejamos en la sección de gastos
+      return addMiscFromApi(o);
+    }
+
+    // PIEZA: crear en backend
+    const created = await api.createPieza({
+      orden_id: o.id,
+      cantidad: 1,
+      codigo: '',
+      descripcion: '',
+      numero_serie: '',
+      precio_unitario_con_iva: 0,
+      excluida_garantia: false
+    });
+
+    // Mapear del backend al modelo que ya usas en refacciones.html
+    const newItem = {
+      id: created.id,
+      cantidad: created.cantidad || 1,
+      codigo: created.codigo || '',
+      descripcion: created.descripcion || '',
+      numeroserie: created.numero_serie || '',
+      preciounitarioconiva: created.precio_unitario_con_iva || 0,
+      excluidagarantia: created.excluida_garantia || false,
+      subtotal: created.subtotal || 0,
+      iva: created.iva || 0,
+      total: created.total || 0
+    };
+
+    o.parts = o.parts || [];
+    o.parts.push(newItem);
+
+    computeOrder(o);
+    renderEditor();
+    renderSidebar(); // para que se actualice el total en la lista
+
+  } catch (err) {
+    console.error('Error creando pieza:', err);
+    alert('Error al agregar pieza: ' + err.message);
+  }
+}
+// Eliminar pieza
+async function removePart(id) {
+  const o = allOrders.find(o => o.id === selectedId);
+  if (!o || o.cerradarefacciones) return;
+
+  const item = (o.parts || []).find(i => i.id === id);
+  if (!item) return;
+
+  if (!window.appConfirm('¿Eliminar esta pieza?')) return;
+
+  try {
+    // Borrar primero en backend
+    await api.deletePieza(id);
+
+    // Actualizar modelo local
+    o.parts = o.parts.filter(i => i.id !== id);
+    computeOrder(o);
+    renderEditor();
+    renderSidebar();
+
+  } catch (err) {
+    console.error('Error eliminando pieza:', err);
+    alert('Error al eliminar pieza: ' + err.message);
+  }
+}
+
+
+
+// Actualizar campos de pieza
+function updatePart(id, field, value) {
+  const o = allOrders.find(o => o.id === selectedId);
+  if (!o || o.cerradarefacciones) return;
+
+  const item = (o.parts || []).find(i => i.id === id);
+  if (!item) return;
+
+  // Actualizar modelo local (igual que antes)
+  if (field === 'cantidad' || field === 'preciounitarioconiva') {
+    item[field] = Number(value) || 0;
+  } else {
+    item[field] = value;
+  }
+
+  computeOrder(o);
+
+  // Actualizar total de esa fila
+  const t = document.getElementById(`pr-total-${id}`);
+  if (t) t.value = money(item.total || 0);
+
+  // Actualizar totales de la tarjeta
+  const td = document.getElementById('totals-display');
+  if (td) td.innerHTML = totalsInnerHtml(o);
+
+  // Enviar cambios al backend con debounce
+  if (partSaveTimers[id]) {
+    clearTimeout(partSaveTimers[id]);
+  }
+  partSaveTimers[id] = setTimeout(async () => {
+    try {
+      const payload = {};
+
+      if (field === 'cantidad') {
+        payload.cantidad = item.cantidad;
+      }
+      if (field === 'preciounitarioconiva') {
+        payload.precio_unitario_con_iva = item.preciounitarioconiva;
+      }
+      if (field === 'codigo') {
+        payload.codigo = item.codigo;
+      }
+      if (field === 'descripcion') {
+        payload.descripcion = item.descripcion;
+      }
+      if (field === 'numeroserie') {
+        payload.numero_serie = item.numeroserie;
+      }
+
+      // Si por alguna razón no hay nada que mandar, no llames al API
+      if (Object.keys(payload).length === 0) return;
+
+      const updated = await api.updatePieza(id, payload);
+
+      // Actualizar campos calculados desde backend para estar sincronizados
+      item.subtotal = updated.subtotal || item.subtotal;
+      item.iva = updated.iva || item.iva;
+      item.total = updated.total || item.total;
+
+      computeOrder(o);
+      const t2 = document.getElementById(`pr-total-${id}`);
+      if (t2) t2.value = money(item.total || 0);
+      const td2 = document.getElementById('totals-display');
+      if (td2) td2.innerHTML = totalsInnerHtml(o);
+      renderSidebar();
+    } catch (err) {
+      console.error('Error actualizando pieza:', err);
+      alert('Error al guardar pieza: ' + err.message);
+    }
+  }, 800);
+}
+
+// Timers para debounce de gastos
+const miscSaveTimers = {};
+
+// Eliminar gasto
+async function removeMisc(id) {
+  const o = allOrders.find(o => o.id === selectedId);
+  if (!o || o.cerradarefacciones) return;
+
+  const item = (o.misc || []).find(i => i.id === id);
+  if (!item) return;
+
+  if (!window.appConfirm('¿Eliminar este gasto?')) return;
+
+  try {
+    await api.deleteGasto(id);
+
+    o.misc = o.misc.filter(i => i.id !== id);
+    computeOrder(o);
+    renderEditor();
+    renderSidebar();
+  } catch (err) {
+    console.error('Error eliminando gasto:', err);
+    alert('Error al eliminar gasto: ' + err.message);
+  }
+}
+
+// Actualizar campos de gasto
+function updateMisc(id, field, value) {
+  const o = allOrders.find(o => o.id === selectedId);
+  if (!o || o.cerradarefacciones) return;
+
+  const item = (o.misc || []).find(i => i.id === id);
+  if (!item) return;
+
+  if (field === 'cantidad' || field === 'preciounitarioconiva') {
+    item[field] = Number(value) || 0;
+  } else {
+    item[field] = value;
+  }
+
+  computeOrder(o);
+
+  const t = document.getElementById(`mc-total-${id}`);
+  if (t) t.value = money(item.total || 0);
+
+  const td = document.getElementById('totals-display');
+  if (td) td.innerHTML = totalsInnerHtml(o);
+
+  if (miscSaveTimers[id]) {
+    clearTimeout(miscSaveTimers[id]);
+  }
+  miscSaveTimers[id] = setTimeout(async () => {
+    try {
+      const payload = {};
+
+      if (field === 'cantidad') payload.cantidad = item.cantidad;
+      if (field === 'preciounitarioconiva') payload.precio_unitario_con_iva = item.preciounitarioconiva;
+      if (field === 'codigo') payload.codigo = item.codigo;
+      if (field === 'descripcion') payload.descripcion = item.descripcion;
+      if (field === 'referencia') payload.referencia = item.referencia;
+
+      if (Object.keys(payload).length === 0) return;
+
+      const updated = await api.updateGasto(id, payload);
+
+      item.subtotal = updated.subtotal || item.subtotal;
+      item.iva = updated.iva || item.iva;
+      item.total = updated.total || item.total;
+
+      computeOrder(o);
+      const t2 = document.getElementById(`mc-total-${id}`);
+      if (t2) t2.value = money(item.total || 0);
+      const td2 = document.getElementById('totals-display');
+      if (td2) td2.innerHTML = totalsInnerHtml(o);
+      renderSidebar();
+    } catch (err) {
+      console.error('Error actualizando gasto:', err);
+      alert('Error al guardar gasto: ' + err.message);
+    }
+  }, 800);
+}
+
+// Marcar / desmarcar "No garantía"
+async function toggleNoWarranty(id, checked) {
+  const o = allOrders.find(o => o.id === selectedId);
+  if (!o || o.cerradarefacciones) return;
+
+  const item = (o.parts || []).find(i => i.id === id);
+  if (!item) return;
+
+  // Actualizar modelo local
+  item.excluidagarantia = checked;
+
+  // Volver a dibujar la fila como ya hacías
+  const row = document.getElementById(`pr-${id}`);
+  if (row) {
+    row.outerHTML = partRowHtml(item, o.esgarantia, true);
+  }
+
+  computeOrder(o);
+  const td = document.getElementById('totals-display');
+  if (td) td.innerHTML = totalsInnerHtml(o);
+  renderSidebar();
+
+  // Enviar inmediatamente al backend (sin debounce, es solo un toggle)
+  try {
+    await api.updatePieza(id, { excluida_garantia: checked });
+  } catch (err) {
+    console.error('Error cambiando garantía:', err);
+    alert('Error al actualizar garantía de la pieza: ' + err.message);
+  }
+}
+
+async function updateLabor() {
+  const o = allOrders.find(o => o.id === selectedId);
+  if (!o || o.cerradarefacciones) return;
+  const hours = Number(document.getElementById('laborHours').value) || 0;
+  const rate = Number(document.getElementById('laborRate').value) || 0;
+  o.horastrabajo = hours;
+  o.tarifahora = rate;
+  computeOrder(o);
+  document.getElementById('laborTotal').value = money(o.labor);
+  refreshTotals(o);
+  renderSidebar();
+  await saveOrder(o, { silent: true });
+}
+
+function refreshTotals(o) {
+  const td = document.getElementById('totals-display');
+  if (td) td.innerHTML = totalsInnerHtml(o);
+}
+
+// ======================== SAVE ORDER ========================
+async function saveOrder(o, options = { silent: false }) {
+  if (saveQueue.has(o.id)) return;
+  saveQueue.set(o.id, true);
+
+  try {
+    const partsToSend = o.parts.map(p => {
+      const isTemp = typeof p.id === 'string' && p.id.startsWith('temp_');
+      return {
+        id: isTemp ? null : p.id,
+        cantidad: p.cantidad,
+        codigo: p.codigo,
+        descripcion: p.descripcion,
+        numero_serie: p.numeroserie,
+        precio_unitario_con_iva: p.preciounitarioconiva,
+        excluida_garantia: p.excluidagarantia
+      };
+    });
+
+    const miscToSend = o.misc.map(g => {
+      const isTemp = typeof g.id === 'string' && g.id.startsWith('temp_');
+      return {
+        id: isTemp ? null : g.id,
+        cantidad: g.cantidad,
+        codigo: g.codigo,
+        descripcion: g.descripcion,
+        referencia: g.referencia,
+        precio_unitario_con_iva: g.preciounitarioconiva
+      };
+    });
+
+    const dataToSave = {
+      piezas: partsToSend,
+      gastos_diversos: miscToSend,
+      horas_trabajo: o.horastrabajo,
+      tarifa_hora: o.tarifahora,
+      cerrada_refacciones: o.cerradarefacciones
+    };
+
+    const response = await api.updateOrden(o.id, dataToSave);
+    
+    if (response && response.data) {
+      mergeBackendData(o, response.data);
+    } else {
+      await refreshSingleOrder(o.id);
+    }
+
+    if (!options.silent) {
+      renderSidebar();
+      if (selectedId === o.id) renderEditor();
+    }
+  } catch (error) {
+    console.error('Error guardando orden:', error);
+    if (!options.silent) alert('Error al guardar cambios: ' + error.message);
+  } finally {
+    saveQueue.delete(o.id);
+  }
+}
+
+function mergeBackendData(localOrder, backendData) {
+  if (backendData.piezas) {
+    const newParts = [];
+    for (const localPart of localOrder.parts) {
+      const match = backendData.piezas.find(bp => 
+        localPart.codigo === bp.codigo && localPart.descripcion === bp.descripcion
+      );
+      if (match) {
+        newParts.push({ ...localPart, id: match.id });
+      } else {
+        newParts.push(localPart);
+      }
+    }
+    localOrder.parts = newParts;
+  }
+  if (backendData.gastos_diversos) {
+    const newMisc = [];
+    for (const localMisc of localOrder.misc) {
+      const match = backendData.gastos_diversos.find(bg =>
+        localMisc.codigo === bg.codigo && localMisc.descripcion === bg.descripcion
+      );
+      if (match) {
+        newMisc.push({ ...localMisc, id: match.id });
+      } else {
+        newMisc.push(localMisc);
+      }
+    }
+    localOrder.misc = newMisc;
+  }
+  if (backendData.total_orden) localOrder.total = backendData.total_orden;
+  if (backendData.total_mano_obra) localOrder.totalmanoobra = backendData.total_mano_obra;
+}
+
+async function refreshSingleOrder(orderId) {
+  try {
+    const freshOrder = await api.getOrdenById(orderId);
+    if (freshOrder) {
+      const mapped = mapOrderFromBackend(freshOrder);
+      const index = allOrders.findIndex(o => o.id === orderId);
+      if (index !== -1) {
+        allOrders[index] = mapped;
+      }
+      if (selectedId === orderId) {
+        const current = allOrders.find(o => o.id === orderId);
+        if (current) Object.assign(current, mapped);
+        renderEditor();
+      }
+      renderSidebar();
+    }
+  } catch (err) {
+    console.warn('No se pudo refrescar la orden individual', err);
+  }
+}
+
+// ======================== CLOSE PARTS ========================
+async function closeParts() {
+  const o = allOrders.find(o => o.id === selectedId);
+  if (!o) return;
+
+  if (!o.parts.length && !o.misc.length && !o.labor) {
+    return alert('Agrega al menos una pieza, gasto o mano de obra antes de cerrar.');
+  }
+
+  if (!appConfirm(`¿Cerrar la orden N° ${o.numeroorden} por parte de Refacciones? Esto bloqueará la edición.`)) return;
+
+  try {
+    // Primero persiste el cierre directamente en el backend
+    await api.updateOrden(o.id, {
+      cerrada_refacciones: true,
+      fecha_cierre_refacciones: new Date().toISOString()
+    });
+
+    // Solo después actualiza el modelo local
+    o.cerradarefacciones = true;
+    o.fechacierrerefacciones = new Date().toISOString();
+    computeOrder(o);
+    renderSidebar();
+    renderEditor();
+  } catch (err) {
+    console.error('Error cerrando orden:', err);
+    alert('Error al cerrar la orden: ' + err.message);
+  }
+}
+
+// ======================== PDF ========================
+function previewPdf() {
+  const o = allOrders.find(o => o.id === selectedId);
+  if (!o) return;
+  document.getElementById('pdfModalBody').innerHTML = getPdfHtml(o);
+  document.getElementById('pdfModal').classList.add('open');
+}
+
+function closePdfModal() {
+  document.getElementById('pdfModal').classList.remove('open');
+}
+
+function doPrint() {
+  const o = allOrders.find(x => x.id === selectedId);
+  if (!o) return;
+
+  const fileName = `OS-${o.numeroorden}`;
+  const printWindow = window.open('', '_blank', 'width=980,height=1280');
+
+  if (!printWindow) {
+    alert('Tu navegador bloqueó la ventana de impresión. Permite pop-ups para continuar.');
+    return;
+  }
+
+  document.getElementById('pdfModal').classList.remove('open');
+
+  const printStyles = `
+    <style>
+      @page {
+        size: A4;
+        margin: 10mm;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #fff;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        color: #111;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .pdf-page {
+        background: #fff;
+        padding: 0;
+        font-size: 11px;
+      }
+
+      .pdf-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .pdf-logos {
+        display: flex;
+        gap: 16px;
+      }
+
+      .pdf-company h1 {
+        font-size: 18px;
+        font-weight: 900;
+        color: #111;
+        margin: 0 0 8px;
+      }
+
+      .pdf-company p {
+        font-size: 9px;
+        color: #555;
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      .pdf-folio-box {
+        text-align: right;
+        background: #f8f8f8;
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      .pdf-folio-num {
+        font-size: 24px;
+        font-weight: 900;
+        color: #E8500A;
+      }
+
+      .pdf-divider {
+        border: none;
+        border-top: 2px solid #D4D4D4;
+        margin: 16px 0;
+      }
+
+      .pdf-client-box {
+        background: #f8f8f8;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+      }
+
+      .pdf-client-box div {
+        margin-bottom: 4px;
+      }
+
+      .pdf-client-box div:last-child {
+        margin-bottom: 0;
+      }
+
+      .pdf-warranty-strip {
+        background: #E65100;
+        color: #fff;
+        padding: 8px;
+        text-align: center;
+        font-weight: 700;
+        margin: 12px 0;
+        border-radius: 6px;
+      }
+
+      .pdf-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+        margin-bottom: 16px;
+      }
+
+      .pdf-table thead tr {
+        background: #1C1C1C;
+        color: #fff;
+      }
+
+      .pdf-table th {
+        padding: 8px;
+        text-align: left;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .pdf-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #F0F0F0;
+        vertical-align: top;
+      }
+
+      .pdf-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .row-nw {
+        background: #FFF5F5;
+      }
+
+      .row-misc {
+        color: #E65100;
+      }
+
+      .row-labor {
+        color: #1565C0;
+        font-weight: 700;
+      }
+
+      .pdf-totals {
+        background: #f8f8f8;
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      .pdf-totals-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+      }
+
+      .pdf-totals-row.grand {
+        border-top: 2px solid #D4D4D4;
+        padding-top: 8px;
+        font-weight: 900;
+        font-size: 14px;
+      }
+
+      .pdf-notes {
+        background: #FFF8E1;
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 12px;
+        font-size: 9px;
+      }
+
+      .pdf-footer-note {
+        font-size: 8px;
+        color: #6B6B6B;
+        margin-top: 12px;
+        text-align: center;
+      }
+
+      .pdf-signs {
+        display: flex;
+        justify-content: space-around;
+        gap: 24px;
+        margin-top: 40px;
+      }
+
+      .sign-line {
+        width: 200px;
+        border-top: 1px solid #B0B0B0;
+        padding-top: 6px;
+      }
+
+      .sign-label {
+        font-size: 9px;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .sign-sublabel {
+        font-size: 8px;
+        color: #6B6B6B;
+        text-align: center;
+      }
+
+      img {
+        max-width: 100%;
+      }
+    </style>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8" />
+      <title>${fileName}</title>
+      ${printStyles}
+    </head>
+    <body>
+      ${getPdfHtml(o)}
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+
+  printWindow.focus();
+
+  const logo = printWindow.document.querySelector('img');
+  if (logo) {
+    logo.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+        setTimeout(() => printWindow.close(), 700);
+      }, 200);
+    };
+    logo.onerror = () => {
+      setTimeout(() => {
+        printWindow.print();
+        setTimeout(() => printWindow.close(), 700);
+      }, 250);
+    };
+  } else {
+    setTimeout(() => {
+      printWindow.print();
+      setTimeout(() => printWindow.close(), 700);
+    }, 300);
+  }
+}
+
+function getPdfHtml(o) {
+  const partsRows = [
+    ...o.parts.map(i => {
+  const isWarrantyCovered = o.esgarantia && !i.excluidagarantia;
+  const totalConIva = i.preciounitarioconiva * i.cantidad;
+  const base = totalConIva / 1.16;
+  const iva = totalConIva - base;
+
+  return `
+    <tr class="${isWarrantyCovered ? '' : 'row-nw'}">
+      <td>${i.cantidad}</td>
+      <td>${escapeHtml(i.codigo)}</td>
+      <td>${escapeHtml(i.descripcion)}</td>
+      <td>${escapeHtml(i.numeroserie)}</td>
+      <td>${isWarrantyCovered ? '<span style="color:#999;font-style:italic">GARANTÍA</span>' : money(base)}</td>
+      <td>${isWarrantyCovered ? '<span style="color:#999;font-style:italic">GARANTÍA</span>' : money(iva)}</td>
+      <td>${isWarrantyCovered ? '<span style="color:#999;font-style:italic">GARANTÍA</span>' : money(totalConIva)}</td>
+    </tr>
+   `;
+    }),
+    ...o.misc.map(i => {
+      const totalConIva = i.preciounitarioconiva * i.cantidad;
+      const base = totalConIva / 1.16;
+      const iva = totalConIva - base;
+      return `<tr class="row-misc"><td>${i.cantidad}</td><td>${escapeHtml(i.codigo)}</td><td>${escapeHtml(i.descripcion)}</td><td>${escapeHtml(i.referencia)}</td><td>${money(base)}</td><td>${money(iva)}</td><td>${money(totalConIva)}</td></tr>`;
+    }),
+    o.labor > 0 ? `<tr class="row-labor"><td>1</td><td></td><td>Mano de Obra (${o.horastrabajo}h × ${money(o.tarifahora)}/h c/IVA)</td><td></td><td>${money(o.labor / 1.16)}</td><td>${money(o.labor - o.labor / 1.16)}</td><td>${money(o.labor)}</td></tr>` : ''
+  ].join('');
+
+  const cobradoConIva = o.esgarantia ? 
+    o.parts.filter(i => i.excluidagarantia).reduce((s, i) => s + i.total, 0) + o.misc.reduce((s, i) => s + i.total, 0) + (o.labor || 0) :
+    o.parts.reduce((s, i) => s + i.total, 0) + o.misc.reduce((s, i) => s + i.total, 0) + (o.labor || 0);
+  const subtotal = cobradoConIva / 1.16;
+  const totalIva = cobradoConIva - subtotal;
+
+  return `
+    <div class="pdf-page">
+      <div class="pdf-header">
+        <div class="pdf-logos">
+          <img src="image.png" alt="Logo InterRural" style="width:160px;height:80px;object-fit:contain"/>
+        </div>
+        <div class="pdf-company">
+          <h1>INTER RURAL <span style="font-size:11px;font-weight:600;color:#555">S.A. DE C.V.</span></h1>
+          <p>BLVD. LUIS ECHEVERRÍA ÁLVAREZ 1700 SUR INT. B, C.P. 89880</p>
+          <p>COL. ALTAVISTA, CD. MANTE, TAMPS.</p>
+          <p>TELS. 831-23-958-50</p>
+        </div>
+        <div class="pdf-folio-box">
+          <div class="pdf-folio-num">N° ${o.numeroorden}</div>
+          <p>FECHA: ${formatDate(o.fechaentrada)}</p>
+          ${o.fechatermino ? `<p>TÉRMINO: ${formatDate(o.fechatermino)}</p>` : ''}
+          ${o.esgarantia ? '<p style="color:#E65100;font-weight:900;margin-top:4px">⚡ GARANTÍA</p>' : ''}
+        </div>
+      </div>
+      <hr class="pdf-divider"/>
+      <div class="pdf-client-box">
+        <div><strong>CLIENTE:</strong> ${escapeHtml(o.clientenombre.toUpperCase())}</div>
+        <div><strong>EQUIPO:</strong> ${escapeHtml(o.equipomodelo)}</div>
+        ${o.equiposerial ? `<div><strong>No. SERIE:</strong> ${escapeHtml(o.equiposerial)}</div>` : ''}
+        <div><strong>TÉCNICO:</strong> ${escapeHtml(o.tecniconombre)}</div>
+      </div>
+      ${o.esgarantia ? '<div class="pdf-warranty-strip">⚡ ORDEN EN GARANTÍA · Los conceptos marcados como GARANTÍA no generan cargo al cliente</div>' : ''}
+      <table class="pdf-table">
+        <thead><tr><th style="width:40px">CANT.</th><th style="width:90px">CÓDIGO</th><th>DESCRIPCIÓN</th><th style="width:100px">No. SERIE</th><th style="width:75px">PRECIO</th><th style="width:65px">IVA</th><th style="width:75px">TOTAL</th></tr></thead>
+        <tbody>
+          ${partsRows || '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Sin conceptos registrados.</td></tr>'}
+        </tbody>
+      </table>
+      <div class="pdf-totals">
+        <div class="pdf-totals-row"><span>SUBTOTAL</span><span>${money(subtotal)}</span></div>
+        <div class="pdf-totals-row"><span>IVA (16%)</span><span>${money(totalIva)}</span></div>
+        <div class="pdf-totals-row grand"><span>TOTAL</span><span>${money(cobradoConIva)}</span></div>
+      </div>
+      ${o.fallareportada ? `<div class="pdf-notes"><strong>FALLA REPORTADA:</strong> ${escapeHtml(o.fallareportada)}</div>` : ''}
+      <div class="pdf-footer-note">Los precios ya incluyen IVA. Desglose calculado automáticamente al 16%.</div>
+      <div class="pdf-signs">
+        <div><div class="sign-line"></div><div class="sign-label">${escapeHtml(o.tecniconombre)}</div><div class="sign-sublabel">Firma Técnico Taller</div></div>
+        <div><div class="sign-line"></div><div class="sign-label">FIRMA DE CRÉDITO</div><div class="sign-sublabel">Autorización Cliente</div></div>
+      </div>
+    </div>
+  `;
+}
+
+// ======================== UTILS ========================
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
+const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+// ======================== SEARCH LISTENER ========================
+document.getElementById('sideSearch').addEventListener('input', renderSidebar);
+</script>
+</body>
+</html>
