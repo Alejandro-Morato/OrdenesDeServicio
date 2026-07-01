@@ -709,7 +709,7 @@ function renderOrdersCompactByTech(ordenes) {
         <div class="compact-line">
           <span class="compact-folio">#${o.folio ?? '—'}</span>
           <span>${escapeHtml((o.cliente_nombre || '—') + (o.equipo_descripcion ? ' · ' + o.equipo_descripcion : ''))}</span>
-          <span style="color:var(--gray-500);font-style:italic;">${escapeHtml(o.descripcion || '—')}</span>
+          <span style="color:var(--gray-500);font-style:italic;">${escapeHtml(o.falla_reportada || '—')}</span>
           <span>${(parseFloat(o.horas_trabajo) || 0).toFixed(1)}h</span>
           <span>${money(parseFloat(o.total_mano_obra) || 0)}</span>
           <span>${compactDate(o.fecha_termino || o.fecha_entrada)}</span>
@@ -727,9 +727,9 @@ function exportCSV() {
     return;
   }
   const orders = lastReportData.ordenes;
-  let csv = 'Folio,Cliente,Equipo,Descripción,Técnico,Fecha Entrada,Fecha Término,Horas,Tarifa/h,Mano Obra\n';
+  let csv = 'Folio,Cliente,Equipo,Falla Reportada,Técnico,Fecha Entrada,Fecha Término,Horas,Tarifa/h,Mano Obra\n';
   orders.forEach(o => {
-    csv += `${o.folio},"${(o.cliente_nombre||'').replaceAll('"','""')}","${(o.equipo_descripcion||'').replaceAll('"','""')}","${(o.descripcion||'').replaceAll('"','""')}","${(o.tecnico_nombre||'').replaceAll('"','""')}",${o.fecha_entrada||''},${o.fecha_termino||''},${o.horas_trabajo||0},${o.tarifa_hora||0},${o.total_mano_obra||0}\n`;
+    csv += `${o.folio},"${(o.cliente_nombre||'').replaceAll('"','""')}","${(o.equipo_descripcion||'').replaceAll('"','""')}","${(o.falla_reportada||'').replaceAll('"','""')}","${(o.tecnico_nombre||'').replaceAll('"','""')}",${o.fecha_entrada||''},${o.fecha_termino||''},${o.horas_trabajo||0},${o.tarifa_hora||0},${o.total_mano_obra||0}\n`;
   });
 
   const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
