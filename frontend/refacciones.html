@@ -312,6 +312,7 @@ let allOrders = [];
 let activeFilter = 'todas';
 let selectedId = null;
 let saveQueue = new Map(); // Evita guardados concurrentes
+let laborSaveTimer = null;
 
 // ======================== AUTH ========================
 (async function() {
@@ -1062,15 +1063,22 @@ async function toggleNoWarranty(id, checked) {
 async function updateLabor() {
   const o = allOrders.find(o => o.id === selectedId);
   if (!o || o.cerradarefacciones) return;
+
   const hours = Number(document.getElementById('laborHours').value) || 0;
   const rate = Number(document.getElementById('laborRate').value) || 0;
+
   o.horastrabajo = hours;
   o.tarifahora = rate;
   computeOrder(o);
   document.getElementById('laborTotal').value = money(o.labor);
   refreshTotals(o);
   renderSidebar();
-  await saveOrder(o, { silent: true });
+
+  // Debounce: espera 800ms después del último keystroke antes de guardar
+  if (laborSaveTimer) clearTimeout(laborSaveTimer);
+  laborSaveTimer = setTimeout(() => {
+    saveOrder(o, { silent: true });
+  }, 800);
 }
 
 function refreshTotals(o) {
