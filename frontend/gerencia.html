@@ -737,7 +737,7 @@ function renderOrdersCompactByTech(ordenes) {
           <span>${(parseFloat(o.horas_trabajo) || 0).toFixed(1)}h</span>
           <span>${money(parseFloat(o.total_mano_obra) || 0)}</span>
           <span>${compactDate(o.fecha_termino || o.fecha_entrada)}</span>
-          <span>${compactDate(o.fecha_cierre_refacciones)}</span>  // ← AGREGAR ESTO
+          <span>${compactDate(o.fecha_cierre_refacciones)}</span>
         </div>
       `).join('')}
       </div>
