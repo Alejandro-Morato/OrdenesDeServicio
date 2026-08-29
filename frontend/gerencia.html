@@ -188,7 +188,7 @@
   }
   .compact-line{
     display:grid;
-    grid-template-columns:70px 1fr 1fr 42px 74px 68px; 
+    grid-template-columns:70px 1fr 1fr 42px 74px 68px 90px;
     gap:8px;
     align-items:center;
     padding:5px 2px;
@@ -300,7 +300,7 @@
 
     .compact-line{
     font-size:9px !important;
-    grid-template-columns:60px 1fr 1fr 38px 70px 64px !important; /* ← igual, +1fr */
+    grid-template-columns:60px 1fr 1fr 38px 70px 64px 76px !important;
     gap:4px !important;
     padding:2px 0 !important;
     border-bottom:1px solid #e5e5e5 !important;
@@ -736,6 +736,7 @@ function renderOrdersCompactByTech(ordenes) {
           <span>${(parseFloat(o.horas_trabajo) || 0).toFixed(1)}h</span>
           <span>${money(parseFloat(o.total_mano_obra) || 0)}</span>
           <span>${compactDate(o.fecha_termino || o.fecha_entrada)}</span>
+          <span>${compactDate(o.fecha_cierre_refacciones)}</span>  // ← AGREGAR ESTO
         </div>
       `).join('')}
       </div>
@@ -750,10 +751,21 @@ function exportCSV() {
     return;
   }
   const orders = lastReportData.ordenes;
-  let csv = 'Folio,Cliente,Equipo,Falla Reportada,Técnico,Fecha Entrada,Fecha Término,Horas,Tarifa/h,Mano Obra\n';
-  orders.forEach(o => {
-    csv += `${o.folio},"${(o.cliente_nombre||'').replaceAll('"','""')}","${(o.equipo_descripcion||'').replaceAll('"','""')}","${(o.falla_reportada||'').replaceAll('"','""')}","${(o.tecnico_nombre||'').replaceAll('"','""')}",${o.fecha_entrada||''},${o.fecha_termino||''},${o.horas_trabajo||0},${o.tarifa_hora||0},${o.total_mano_obra||0}\n`;
-  });
+  let csv = 'Folio,Cliente,Equipo,Falla Reportada,Técnico,Fecha Entrada,Fecha Término,Fecha Cierre Refacciones,Horas,Tarifa/h,Mano Obra\n';
+
+orders.forEach(o => {
+  csv += `${o.folio},` +
+    `"${(o.cliente_nombre||'').replaceAll('"','""')}",` +
+    `"${(o.equipo_descripcion||'').replaceAll('"','""')}",` +
+    `"${(o.falla_reportada||'').replaceAll('"','""')}",` +
+    `"${(o.tecnico_nombre||'').replaceAll('"','""')}",` +
+    `${o.fecha_entrada||''},` +
+    `${o.fecha_termino||''},` +
+    `${o.fecha_cierre_refacciones||''},` +  // ← AGREGAR ESTO
+    `${o.horas_trabajo||0},` +
+    `${o.tarifa_hora||0},` +
+    `${o.total_mano_obra||0}\n`;
+});
 
   const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
